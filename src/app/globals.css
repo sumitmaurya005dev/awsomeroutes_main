@@ -1,26 +1,173 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:is(.dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fbfbf9;
+  --foreground: #131901;
+  --card: #f6f7f2;
+  --card-foreground: #131901;
+  --popover: #fbfcf7;
+  --popover-foreground: #131901;
+  --primary: #bdde63;
+  --primary-foreground: #121603;
+  --secondary: #e9edde;
+  --secondary-foreground: #384b02;
+  --muted: #f1f3ed;
+  --muted-foreground: #696b61;
+  --accent: #e9ecdf;
+  --accent-foreground: #384b02;
+  --destructive: #ef4343;
+  --destructive-foreground: #ffffff;
+  --border: #dbddd5;
+  --input: #dee4cd;
+  --ring: #ace600;
+  --chart-1: #ace600;
+  --chart-2: #72ad1f;
+  --chart-3: #bfcf17;
+  --chart-4: #5ca329;
+  --chart-5: #c7f53d;
+  --sidebar: #fbfbf9;
+  --sidebar-foreground: #131901;
+  --sidebar-primary: #bdde63;
+  --sidebar-primary-foreground: #121603;
+  --sidebar-accent: #e9ecdf;
+  --sidebar-accent-foreground: #384b02;
+  --sidebar-border: #dbddd5;
+  --sidebar-ring: #ace600;
+  --font-sans: Inter, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.35rem;
+  --shadow-x: 0px;
+  --shadow-y: 4px;
+  --shadow-blur: 12px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.08;
+  --shadow-color: hsl(75, 100%, 5%);
+  --shadow-2xs: 0px 4px 12px 0px hsl(75 100% 5% / 0.04);
+  --shadow-xs: 0px 4px 12px 0px hsl(75 100% 5% / 0.04);
+  --shadow-sm: 0px 4px 12px 0px hsl(75 100% 5% / 0.08), 0px 1px 2px -1px hsl(75 100% 5% / 0.08);
+  --shadow: 0px 4px 12px 0px hsl(75 100% 5% / 0.08), 0px 1px 2px -1px hsl(75 100% 5% / 0.08);
+  --shadow-md: 0px 4px 12px 0px hsl(75 100% 5% / 0.08), 0px 2px 4px -1px hsl(75 100% 5% / 0.08);
+  --shadow-lg: 0px 4px 12px 0px hsl(75 100% 5% / 0.08), 0px 4px 6px -1px hsl(75 100% 5% / 0.08);
+  --shadow-xl: 0px 4px 12px 0px hsl(75 100% 5% / 0.08), 0px 8px 10px -1px hsl(75 100% 5% / 0.08);
+  --shadow-2xl: 0px 4px 12px 0px hsl(75 100% 5% / 0.20);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: #020201;
+  --foreground: #fafbf9;
+  --card: #151613;
+  --card-foreground: #fafbf9;
+  --popover: #0a0c03;
+  --popover-foreground: #fafbf9;
+  --primary: #bfff00;
+  --primary-foreground: #131a00;
+  --secondary: #252b12;
+  --secondary-foreground: #e8ebe0;
+  --muted: #1f240f;
+  --muted-foreground: #838679;
+  --accent: #394d00;
+  --accent-foreground: #d9ff66;
+  --destructive: #bc1010;
+  --destructive-foreground: #fafafa;
+  --border: #282a22;
+  --input: #2e3617;
+  --ring: #bfff00;
+  --chart-1: #bfff00;
+  --chart-2: #9ce830;
+  --chart-3: #e6f53d;
+  --chart-4: #71d926;
+  --chart-5: #c1db70;
+  --sidebar: #020201;
+  --sidebar-foreground: #fafbf9;
+  --sidebar-primary: #bfff00;
+  --sidebar-primary-foreground: #131a00;
+  --sidebar-accent: #394d00;
+  --sidebar-accent-foreground: #d9ff66;
+  --sidebar-border: #282a22;
+  --sidebar-ring: #bfff00;
+  --font-sans: Inter, sans-serif;
+  --font-serif: Georgia, serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.35rem;
+  --shadow-x: 0px;
+  --shadow-y: 8px;
+  --shadow-blur: 16px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.4;
+  --shadow-color: hsl(75, 20%, 10%);
+  --shadow-2xs: 0px 8px 16px 0px hsl(75 20% 10% / 0.20);
+  --shadow-xs: 0px 8px 16px 0px hsl(75 20% 10% / 0.20);
+  --shadow-sm: 0px 8px 16px 0px hsl(75 20% 10% / 0.40), 0px 1px 2px -1px hsl(75 20% 10% / 0.40);
+  --shadow: 0px 8px 16px 0px hsl(75 20% 10% / 0.40), 0px 1px 2px -1px hsl(75 20% 10% / 0.40);
+  --shadow-md: 0px 8px 16px 0px hsl(75 20% 10% / 0.40), 0px 2px 4px -1px hsl(75 20% 10% / 0.40);
+  --shadow-lg: 0px 8px 16px 0px hsl(75 20% 10% / 0.40), 0px 4px 6px -1px hsl(75 20% 10% / 0.40);
+  --shadow-xl: 0px 8px 16px 0px hsl(75 20% 10% / 0.40), 0px 8px 10px -1px hsl(75 20% 10% / 0.40);
+  --shadow-2xl: 0px 8px 16px 0px hsl(75 20% 10% / 1.00);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
 }
