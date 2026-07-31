@@ -4,9 +4,9 @@ import Link from "next/link";
 import { LockKeyhole, Mail, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "../actions/auth/login-action"; // Verify this exact relative path to your file!
+import { login } from "../actions/auth/login"; // Verify this exact relative path to your file!
 
-export default function DashboardLoginPage() {
+export default function PortalLoginPage() {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -26,7 +26,7 @@ export default function DashboardLoginPage() {
         setErrorMessage(response.error);
       } else {
         // Force routing cleanly on successful login
-        router.push("/dashboard");
+        router.push("/home");
         router.refresh();
       }
     } catch (err: any) {

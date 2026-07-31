@@ -25,6 +25,6 @@ export async function login(formData: FormData) {
   }
 
   // Return success; client side router will push them to /dashboard cleanly
-  redirect('/dashboard/home')
+  redirect('/home')
   return { success: true }
 }
