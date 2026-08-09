@@ -16,15 +16,16 @@ import {
 
 import { useTheme } from 'next-themes'
 import { logoutAction } from '@/actions/auth/logout'
+import { SidebarTrigger } from '../ui/sidebar'
 
 
 
 const Navbar = () => {
   const { setTheme } = useTheme()
   return (
-    <nav className='p-4 flex items-center justify-between'>
+    <nav className='p-4 flex items-center justify-between shadow-sm backdrop-blur'>
       {/* left Side  */}
-      <span>Collapsable Button</span>   {/* this button will close the side bar */}
+      <SidebarTrigger/>   {/* this button will close the side bar */}
 
       {/* right Side */}
       

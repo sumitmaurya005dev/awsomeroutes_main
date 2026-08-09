@@ -1,0 +1,39 @@
+import {
+  Activity,
+  Car,
+  ClipboardList,
+  Database,
+  FileText,
+  Hotel,
+  LayoutDashboard,
+  List,
+  MapPinned,
+  Package,
+  Plus,
+  Settings,
+  ShieldCheck,
+  Users,
+  Pin,
+  KeyRound,
+} from "lucide-react";
+
+export const sidebarIcons = {
+  dashboard: LayoutDashboard,
+  package: Package,
+  plus: Plus,
+  list: List,
+  map: MapPinned,
+  activity: Activity,
+  hotel: Hotel,
+  car: Car,
+  users: Users,
+  pin:Pin,
+  shield: ShieldCheck,
+  key: KeyRound,
+  settings: Settings,
+  database: Database,
+  clipboard: ClipboardList,
+  file: FileText,
+} as const;
+
+export type IconName = keyof typeof sidebarIcons;

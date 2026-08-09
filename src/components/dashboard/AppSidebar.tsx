@@ -1,30 +1,53 @@
-import React from 'react'
-import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu } from '../ui/sidebar'
-import { adminNavigation } from '@/config/dashboard-sidebar/admin'
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarRail,
+} from "@/components/ui/sidebar";
 
-const AppSidebar = () => {
+import { getCurrentUser } from "@/lib/auth";
+import { getUserPermissions } from "@/lib/auth";
+import { superAdminNavigation } from "@/config/sidebar-navigation";
+import { filterSidebar } from "@/lib/auth";
+
+import AppSidebarHeader from "./AppSidebarHeader";
+import AppSidebarNavMain from "./AppsidebarNavMain";
+import AppSidebarFooter from "./AppSidebarFooter";
+
+export default async function AppSidebar() {
+  const user = await getCurrentUser();
+
+  if (!user || !user.role) return null;
+
+  const permissions = await getUserPermissions();
+
+
+ const sidebar = filterSidebar(
+  superAdminNavigation,
+  permissions
+);
   return (
-    <div>
-        <h2>Dashboard sidebar</h2>
-       {/* {adminNavigation.map((group) => (
-  <div key={group.group}>
-    <h2>{group.group}</h2>
+    <Sidebar collapsible="icon"  className="shadow-sm">
 
-    {group.items.map((item) => (
-      <div key={item.id}>
-        <p>{item.title}</p>
+      <SidebarHeader>
+        <AppSidebarHeader />
+      </SidebarHeader>
 
-        {item.children?.map((child) => (
-          <div key={child.id} className="ml-6">
-            {child.title}
-          </div>
-        ))}
-      </div>
-    ))}
-  </div>
-))} */}
-    </div>
-  )
+      <SidebarContent>
+
+        <AppSidebarNavMain items={sidebar}/>
+
+      </SidebarContent>
+
+      <SidebarFooter>
+
+        <AppSidebarFooter user={user}/>
+
+      </SidebarFooter>
+
+      <SidebarRail />
+
+    </Sidebar>
+  );
 }
-
-export default AppSidebar
