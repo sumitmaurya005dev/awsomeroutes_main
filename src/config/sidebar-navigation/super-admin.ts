@@ -8,7 +8,7 @@ export const superAdminNavigation: SidebarItem[] = [
     icon: "dashboard",
     permission: "dashboard.view",
   },
-  
+
     // Later implementation
   //  {
   //   title: "Bookings",
@@ -53,25 +53,46 @@ export const superAdminNavigation: SidebarItem[] = [
       },
     ],
   },
-
-  {
-    title: "Locations",
+   {
+    title: "Countries",
     icon: "map",
-    permission: "Locations.view",
+    permission: "countries.view",
 
     children: [
       {
-        title: "All Locations",
+        title: "All Countries",
         href: "/dashboard/packages",
         icon: "list",
-        permission: "locations.view",
+        permission: "countries.view",
       },
 
       {
-        title: "Create Location",
+        title: "Create Country",
         href: "/dashboard/packages/create",
         icon: "plus",
-        permission: "locations.create",
+        permission: "countries.create",
+      },
+    ],
+  },
+
+  {
+    title: "Regions",
+    icon: "map",
+    permission: "regions.view",
+
+    children: [
+      {
+        title: "All Regions",
+        href: "/dashboard/packages",
+        icon: "list",
+        permission: "regions.view",
+      },
+
+      {
+        title: "Create Region",
+        href: "/dashboard/packages/create",
+        icon: "plus",
+        permission: "regions.create",
       },
     ],
   },
