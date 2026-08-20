@@ -15,6 +15,7 @@ import {
   Users,
   Pin,
   KeyRound,
+  Globe,
 } from "lucide-react";
 
 export const sidebarIcons = {
@@ -34,6 +35,7 @@ export const sidebarIcons = {
   database: Database,
   clipboard: ClipboardList,
   file: FileText,
+  globe: Globe,
 } as const;
 
 export type IconName = keyof typeof sidebarIcons;

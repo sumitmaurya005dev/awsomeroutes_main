@@ -55,20 +55,20 @@ export const superAdminNavigation: SidebarItem[] = [
   },
    {
     title: "Countries",
-    icon: "map",
+    icon: "globe",
     permission: "countries.view",
 
     children: [
       {
         title: "All Countries",
-        href: "/dashboard/packages",
+        href: "/home/countries",
         icon: "list",
         permission: "countries.view",
       },
 
       {
         title: "Create Country",
-        href: "/dashboard/packages/create",
+        href: "/home/countries/create",
         icon: "plus",
         permission: "countries.create",
       },
@@ -83,14 +83,14 @@ export const superAdminNavigation: SidebarItem[] = [
     children: [
       {
         title: "All Regions",
-        href: "/dashboard/packages",
+        href: "/home/regions",
         icon: "list",
         permission: "regions.view",
       },
 
       {
         title: "Create Region",
-        href: "/dashboard/packages/create",
+        href: "/home/regions/create",
         icon: "plus",
         permission: "regions.create",
       },

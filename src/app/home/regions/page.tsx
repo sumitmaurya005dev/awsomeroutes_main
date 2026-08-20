@@ -1,8 +1,10 @@
-import Link from "next/link";
-import { Globe2, Plus } from "lucide-react";
 
-import { getCountries } from "@/lib/countries/queries";
-import { CountriesTable } from "@/components/countries/countries-table";
+import Link from "next/link";
+import { MapPinned, Plus } from "lucide-react";
+
+import { getRegions } from "@/lib/regions/queries";
+
+import { RegionsTable } from "@/components/regions/regions-table";
 
 import {
   Breadcrumb,
@@ -18,26 +20,49 @@ import SearchInput from "@/components/common/search-input";
 import SortSelect from "@/components/common/sort-select";
 import FilterSelect from "@/components/common/filter-select";
 
-interface CountriesPageProps {
+interface RegionsPageProps {
   searchParams: Promise<{
     page?: string;
     search?: string;
     sort?: string;
     status?: string;
+    countryId?: string;
   }>;
 }
 
-export default async function CountriesPage({
+export default async function RegionsPage({
   searchParams,
-}: CountriesPageProps) {
+}: RegionsPageProps) {
   const params = await searchParams;
+
+  // --------------------------------------------------
+  // Search
+  // --------------------------------------------------
+
   const search = params.search?.trim() ?? "";
+
+  // --------------------------------------------------
+  // Status
+  // --------------------------------------------------
+
   const statusParam = params.status ?? "all";
 
   const status =
-    statusParam === "active" || statusParam === "inactive"
+    statusParam === "active" ||
+    statusParam === "inactive"
       ? statusParam
       : "all";
+
+  // --------------------------------------------------
+  // Country
+  // --------------------------------------------------
+
+  const countryId = params.countryId?.trim() ?? "";
+
+  // --------------------------------------------------
+  // Sort
+  // --------------------------------------------------
+
   const sortParam = params.sort ?? "name:asc";
 
   const [sortByParam, sortOrderParam] =
@@ -73,9 +98,14 @@ export default async function CountriesPage({
   const requestedPage = Number(params.page);
 
   const currentPage =
-    Number.isInteger(requestedPage) && requestedPage >= 1
+    Number.isInteger(requestedPage) &&
+    requestedPage >= 1
       ? requestedPage
       : 1;
+
+  // --------------------------------------------------
+  // Supabase
+  // --------------------------------------------------
 
   const supabase = await createClient();
 
@@ -114,15 +144,15 @@ export default async function CountriesPage({
   }
 
   // --------------------------------------------------
-  // Country management permission
+  // Region management permission
   // --------------------------------------------------
 
-  const canManageCountries =
+  const canManageRegions =
     roleSlug === "admin" ||
     roleSlug === "super_admin";
 
   // --------------------------------------------------
-  // Countries
+  // Regions
   // --------------------------------------------------
 
   const {
@@ -131,14 +161,27 @@ export default async function CountriesPage({
     page,
     limit,
     totalPages,
-  } = await getCountries({
+  } = await getRegions({
     page: currentPage,
     limit: 50,
     search,
     status,
+    countryId,
     sortBy,
     sortOrder,
   });
+
+  // --------------------------------------------------
+  // Countries for filter
+  // --------------------------------------------------
+
+  const { data: countries } = await supabase
+    .from("countries")
+    .select("id, name")
+    .eq("status", "active")
+    .order("name", {
+      ascending: true,
+    });
 
   return (
     <div className="min-h-full bg-background">
@@ -164,7 +207,7 @@ export default async function CountriesPage({
 
             <BreadcrumbItem>
               <BreadcrumbPage>
-                Countries
+                Regions
               </BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
@@ -176,57 +219,57 @@ export default async function CountriesPage({
           {/* Left */}
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Globe2 className="h-6 w-6" />
+              <MapPinned className="h-6 w-6" />
             </div>
 
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-                  Countries
+                  Regions
                 </h1>
 
                 <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
                   {count}{" "}
-                  {count === 1 ? "country" : "countries"}
+                  {count === 1
+                    ? "region"
+                    : "regions"}
                 </span>
               </div>
 
               <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-                Manage countries used across your travel platform.
+                Manage regions used across your travel platform.
               </p>
             </div>
           </div>
 
-          {/* Add Country */}
-          {canManageCountries && (
+          {/* Add Region */}
+          {canManageRegions && (
             <Link
-              href="/home/countries/create"
+              href="/home/regions/create"
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Plus className="h-4 w-4" />
-              Add Country
+              Add Region
             </Link>
           )}
         </div>
 
-        {/* Countries Section */}
-
+        {/* Regions Section */}
         <section className="space-y-4">
 
           {/* Section Header + Controls */}
-          <div className="flex flex-col  gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
 
             {/* Section Title */}
             <div className="min-w-0">
               <h2 className="text-base font-semibold text-foreground">
-                All Countries
+                All Regions
               </h2>
 
               <p className="mt-0.5 text-sm text-muted-foreground">
-                View and manage all countries available in the system.
+                View and manage all regions available in the system.
               </p>
             </div>
-
 
             {/* Search + Sort + Filter */}
             <div className="w-full min-w-0 lg:w-auto">
@@ -235,7 +278,7 @@ export default async function CountriesPage({
                 {/* Search */}
                 <div className="col-span-1 min-w-0 lg:w-[250px] lg:shrink-0">
                   <SearchInput
-                    placeholder="Search countries..."
+                    placeholder="Search regions..."
                     className="w-full"
                   />
                 </div>
@@ -274,7 +317,7 @@ export default async function CountriesPage({
                   />
                 </div>
 
-                {/* Filter */}
+                {/* Status Filter */}
                 <div className="col-span-1 min-w-0 lg:w-[190px] lg:shrink-0">
                   <FilterSelect
                     options={[
@@ -301,14 +344,14 @@ export default async function CountriesPage({
             </div>
           </div>
 
-          {/* Countries Table */}
-          <CountriesTable
+          {/* Regions Table */}
+          <RegionsTable
             data={data}
             count={count}
             page={page}
             limit={limit}
             totalPages={totalPages}
-            canManage={canManageCountries}
+            canManage={canManageRegions}
           />
 
         </section>
@@ -316,3 +359,4 @@ export default async function CountriesPage({
     </div>
   );
 }
+
