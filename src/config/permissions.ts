@@ -19,6 +19,13 @@ export const PERMISSIONS = {
     DELETE: "destinations.delete",
   },
 
+  LOCATIONS: {
+    VIEW: "locations.view",
+    CREATE: "locations.create",
+    UPDATE: "locations.update",
+    DELETE: "locations.delete",
+  },
+
   ACTIVITIES: {
     VIEW: "activities.view",
     CREATE: "activities.create",

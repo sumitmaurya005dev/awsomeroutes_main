@@ -69,6 +69,12 @@ export const createCountrySchema = z.object({
     .nullable()
     .optional(),
 
+  image_asset_id: z
+    .string()
+    .uuid("Please select a valid media asset.")
+    .nullable()
+    .optional(),
+
   status: countryStatusSchema.default("active"),
 });
 

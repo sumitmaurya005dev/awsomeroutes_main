@@ -36,6 +36,7 @@ export async function createRegion(
     slug,
     description,
     image_url,
+    image_asset_id,
     status,
   } = parsed.data;
 
@@ -140,6 +141,7 @@ export async function createRegion(
       slug,
       description: description || null,
       image_url: image_url || null,
+      image_asset_id: image_asset_id || null,
       status,
     })
     .select(
@@ -216,6 +218,7 @@ export async function updateRegion(
     slug,
     description,
     image_url,
+    image_asset_id,
     status,
   } = parsed.data;
 
@@ -353,6 +356,7 @@ export async function updateRegion(
       slug,
       description: description || null,
       image_url: image_url || null,
+      image_asset_id: image_asset_id || null,
       status,
       updated_at: new Date().toISOString(),
     })

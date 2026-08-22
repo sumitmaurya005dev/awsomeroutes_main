@@ -10,7 +10,11 @@ import {
 } from "lucide-react";
 
 import type { RegionWithCountry } from "@/lib/regions/queries";
-import { uploadImageToImageKit } from "@/lib/imagekit/upload-client";
+import {
+  MEDIA_FOLDERS,
+  uploadImageToImageKit,
+} from "@/lib/imagekit/upload-client";
+import { MediaPickerDialog } from "@/components/media/media-picker-dialog";
 
 import {
   Dialog,
@@ -62,6 +66,9 @@ export function EditRegionDialog({
   const originalImageUrl =
     region.image_url ?? "";
 
+  const originalImageAssetId =
+    region.image_asset_id ?? "";
+
   const [name, setName] = React.useState(
     region.name
   );
@@ -85,6 +92,9 @@ export function EditRegionDialog({
   const [imageUrl, setImageUrl] =
     React.useState(originalImageUrl);
 
+  const [imageAssetId, setImageAssetId] =
+    React.useState(originalImageAssetId);
+
   const [previewUrl, setPreviewUrl] =
     React.useState(originalImageUrl);
 
@@ -103,6 +113,9 @@ export function EditRegionDialog({
   const [error, setError] =
     React.useState<string | null>(null);
 
+  const [mediaPickerOpen, setMediaPickerOpen] =
+    React.useState(false);
+
   const hasChanges =
     name !== region.name ||
     slug !== region.slug ||
@@ -110,6 +123,7 @@ export function EditRegionDialog({
       (region.description ?? "") ||
     status !== region.status ||
     imageUrl !== originalImageUrl ||
+    imageAssetId !== originalImageAssetId ||
     selectedFile !== null;
 
   const revokeLocalPreview = () => {
@@ -127,12 +141,17 @@ export function EditRegionDialog({
     setName(region.name);
     setSlug(region.slug);
     setDescription(region.description ?? "");
+
     setStatus(
       region.status === "inactive"
         ? "inactive"
         : "active"
     );
+
     setImageUrl(existingImageUrl);
+    setImageAssetId(
+      region.image_asset_id ?? ""
+    );
     setPreviewUrl(existingImageUrl);
     setSelectedFile(null);
     setUploadProgress(0);
@@ -183,11 +202,12 @@ export function EditRegionDialog({
     setSelectedFile(file);
     setPreviewUrl(localPreviewUrl);
 
-    // Image is not uploaded yet.
+    // New image has not been uploaded yet.
     setImageUrl("");
+    setImageAssetId("");
     setUploadProgress(0);
 
-    // Same file can be selected again.
+    // Allow selecting the same file again.
     event.target.value = "";
   };
 
@@ -209,6 +229,7 @@ export function EditRegionDialog({
     setSelectedFile(null);
     setPreviewUrl("");
     setImageUrl("");
+    setImageAssetId("");
     setUploadProgress(0);
 
     if (fileInputRef.current) {
@@ -246,19 +267,25 @@ export function EditRegionDialog({
 
     try {
       let finalImageUrl = imageUrl;
+      let finalImageAssetId = imageAssetId;
 
       if (selectedFile) {
         setUploading(true);
         setUploadProgress(0);
 
         try {
-          finalImageUrl =
+          const mediaAsset =
             await uploadImageToImageKit({
               file: selectedFile,
-              folder: "/awesomeroutes/regions",
+              folder: MEDIA_FOLDERS.REGIONS,
               fileNamePrefix: finalSlug,
+              altText: trimmedName,
               onProgress: setUploadProgress,
             });
+
+          finalImageUrl =
+            mediaAsset.original_url;
+          finalImageAssetId = mediaAsset.id;
         } finally {
           setUploading(false);
         }
@@ -274,29 +301,50 @@ export function EditRegionDialog({
           body: JSON.stringify({
             name: trimmedName,
             slug: finalSlug,
-            description: description.trim() || null,
+            description:
+              description.trim() || null,
             status,
             image_url: finalImageUrl || null,
+            image_asset_id:
+              finalImageAssetId || null,
           }),
         }
       );
 
-      const result = await response.json();
+      const responseText = await response.text();
+
+      let result: {
+        error?: string;
+      };
+
+      try {
+        result = responseText
+          ? JSON.parse(responseText)
+          : {};
+      } catch {
+        console.error(
+          "Region PATCH raw response:",
+          responseText
+        );
+
+        throw new Error(
+          `Region update API returned an invalid response (status ${response.status}).`
+        );
+      }
 
       if (!response.ok) {
         throw new Error(
-          result?.error ??
-            "Failed to update region."
+          result.error ??
+            `Failed to update region (status ${response.status}).`
         );
       }
 
       revokeLocalPreview();
 
-      // Keep new values in local state until
-      // server components refresh.
       setName(trimmedName);
       setSlug(finalSlug);
       setImageUrl(finalImageUrl);
+      setImageAssetId(finalImageAssetId);
       setPreviewUrl(finalImageUrl);
       setSelectedFile(null);
 
@@ -338,7 +386,7 @@ export function EditRegionDialog({
       open={open}
       onOpenChange={handleDialogChange}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-150">
         <DialogHeader>
           <DialogTitle>
             Edit Region
@@ -553,8 +601,19 @@ export function EditRegionDialog({
                 : "Select Image"}
             </Button>
 
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setMediaPickerOpen(true)}
+              disabled={saving || uploading}
+              className="h-10 w-full rounded-lg"
+            >
+              <ImagePlus className="mr-2 h-4 w-4" />
+              Choose from Media Library
+            </Button>
+
             <p className="text-xs text-muted-foreground">
-              New images are uploaded only on Save
+              New images upload only after Save
               Changes. Previous ImageKit images stay
               unchanged.
             </p>
@@ -604,6 +663,21 @@ export function EditRegionDialog({
             </Button>
           </DialogFooter>
         </form>
+        <MediaPickerDialog
+          open={mediaPickerOpen}
+          onOpenChange={setMediaPickerOpen}
+          folder={MEDIA_FOLDERS.REGIONS}
+          fileNamePrefix={slug || "region"}
+          altText={name || "Region image"}
+          onSelect={(asset) => {
+            revokeLocalPreview();
+            setSelectedFile(null);
+            setImageUrl(asset.original_url);
+            setImageAssetId(asset.id);
+            setPreviewUrl(asset.original_url);
+            setError(null);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

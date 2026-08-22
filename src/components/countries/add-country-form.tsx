@@ -2,10 +2,16 @@
 
 import * as React from "react";
 import { createCountryAction } from "@/actions/countries/actions";
+import Image from "next/image";
+import { ImagePlus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MediaPickerDialog } from "@/components/media/media-picker-dialog";
+import { MEDIA_FOLDERS } from "@/lib/imagekit/upload-client";
 
 export function AddCountryForm() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [mediaPickerOpen, setMediaPickerOpen] = React.useState(false);
 
   const [formData, setFormData] = React.useState({
     name: "",
@@ -14,6 +20,7 @@ export function AddCountryForm() {
     phone_code: "",
     status: "active",
     image_url: "",
+    image_asset_id: "",
   });
 
   function handleChange(
@@ -41,6 +48,7 @@ export function AddCountryForm() {
         phone_code: formData.phone_code.trim(),
         status: formData.status as "active" | "inactive",
         image_url: formData.image_url.trim() || null,
+        image_asset_id: formData.image_asset_id || null,
       });
 
       if (!result.success) {
@@ -72,6 +80,7 @@ export function AddCountryForm() {
   }
 
   return (
+    <>
     <form
       onSubmit={handleSubmit}
       className="space-y-6 rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6"
@@ -188,25 +197,20 @@ export function AddCountryForm() {
           </select>
         </div>
 
-        {/* Image URL */}
-        <div className="space-y-2">
-          <label
-            htmlFor="image_url"
-            className="text-sm font-medium text-foreground"
-          >
-            Image URL
-          </label>
-
-          <input
-            id="image_url"
-            name="image_url"
-            type="url"
-            value={formData.image_url}
-            onChange={handleChange}
-            placeholder="https://example.com/india.jpg"
-            disabled={isSubmitting}
-            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
-          />
+        {/* Image */}
+        <div className="space-y-2 sm:col-span-2">
+          <label className="text-sm font-medium text-foreground">Country Image</label>
+          {formData.image_url ? (
+            <div className="relative overflow-hidden rounded-xl border border-border bg-muted">
+              <Image src={formData.image_url} alt={formData.name || "Country image"} width={800} height={360} unoptimized className="h-44 w-full object-cover" />
+              <button type="button" onClick={() => setFormData((previous) => ({ ...previous, image_url: "", image_asset_id: "" }))} disabled={isSubmitting} className="absolute right-3 top-3 rounded-full bg-destructive p-2 text-destructive-foreground"><X className="h-4 w-4" /></button>
+            </div>
+          ) : null}
+          <Button type="button" variant="outline" onClick={() => setMediaPickerOpen(true)} disabled={isSubmitting} className="w-full">
+            <ImagePlus className="mr-2 h-4 w-4" />
+            {formData.image_url ? "Change image" : "Choose or upload image"}
+          </Button>
+          <p className="text-xs text-muted-foreground">Select a reusable image from the Media Library or upload a new one.</p>
         </div>
       </div>
 
@@ -239,5 +243,14 @@ export function AddCountryForm() {
         </button>
       </div>
     </form>
+    <MediaPickerDialog
+      open={mediaPickerOpen}
+      onOpenChange={setMediaPickerOpen}
+      folder={MEDIA_FOLDERS.COUNTRIES}
+      fileNamePrefix={formData.slug || "country"}
+      altText={formData.name || "Country image"}
+      onSelect={(asset) => setFormData((previous) => ({ ...previous, image_url: asset.original_url, image_asset_id: asset.id }))}
+    />
+    </>
   );
 }

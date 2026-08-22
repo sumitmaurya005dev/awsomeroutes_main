@@ -49,6 +49,12 @@ export const regionSchema = z.object({
     .nullable()
     .optional(),
 
+  image_asset_id: z
+    .string()
+    .uuid("Please select a valid media asset.")
+    .nullable()
+    .optional(),
+
   status: regionStatusSchema.default("active"),
 });
 

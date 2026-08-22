@@ -44,6 +44,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
+import { MediaPickerDialog } from "@/components/media/media-picker-dialog";
+import { MEDIA_FOLDERS } from "@/lib/imagekit/upload-client";
 
 interface EditCountryDialogProps {
   country: Country | null;
@@ -59,6 +61,7 @@ type CountryForm = {
   phone_code: string;
   description: string;
   image_url: string;
+  image_asset_id: string;
   status: "active" | "inactive";
 };
 
@@ -74,6 +77,7 @@ function getFormFromCountry(country: Country): CountryForm {
     phone_code: country.phone_code ?? "",
     description: country.description ?? "",
     image_url: country.image_url ?? "",
+    image_asset_id: country.image_asset_id ?? "",
     status:
       country.status === "inactive"
         ? "inactive"
@@ -180,6 +184,9 @@ function EditCountryForm({
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
+  const [mediaPickerOpen, setMediaPickerOpen] =
+    useState(false);
+
   /* =========================================================
      CHECK CHANGES
      ========================================================= */
@@ -192,6 +199,7 @@ function EditCountryForm({
       form.phone_code !== originalForm.phone_code ||
       form.description !== originalForm.description ||
       form.image_url !== originalForm.image_url ||
+      form.image_asset_id !== originalForm.image_asset_id ||
       form.status !== originalForm.status
     );
   }, [form, originalForm]);
@@ -293,6 +301,11 @@ function EditCountryForm({
           form.image_url.trim() === ""
             ? null
             : form.image_url.trim(),
+
+        image_asset_id:
+          form.image_asset_id.trim() === ""
+            ? null
+            : form.image_asset_id.trim(),
 
         status: form.status,
       });
@@ -902,6 +915,17 @@ function EditCountryForm({
                     {fieldErrors.image_url[0]}
                   </p>
                 )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setMediaPickerOpen(true)}
+                  disabled={isSubmitting}
+                  className="w-full"
+                >
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Choose from Media Library
+                </Button>
               </div>
 
               {/* IMAGE PREVIEW */}
@@ -1232,6 +1256,18 @@ function EditCountryForm({
           </Button>
         </DialogFooter>
       </form>
+
+      <MediaPickerDialog
+        open={mediaPickerOpen}
+        onOpenChange={setMediaPickerOpen}
+        folder={MEDIA_FOLDERS.COUNTRIES}
+        fileNamePrefix={form.slug || "country"}
+        altText={form.name || "Country image"}
+        onSelect={(asset) => {
+          updateField("image_url", asset.original_url);
+          updateField("image_asset_id", asset.id);
+        }}
+      />
     </>
   );
 }

@@ -1,0 +1,6 @@
+import Link from "next/link";
+import { ArrowLeft, MapPin } from "lucide-react";
+import { DestinationForm } from "@/components/destinations/destination-form";
+import { getActiveRegions } from "@/lib/destinations/queries";
+
+export default async function CreateDestinationPage() { const regions = await getActiveRegions(); const options = regions.map((item) => ({ id: item.id, name: item.name, countryName: (item.country as { name: string } | null)?.name ?? "" })); return <div className="min-h-full bg-background"><div className="mx-auto w-full max-w-[1000px] space-y-6 p-4 sm:p-6 lg:p-8"><Link href="/home/destinations" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Back to Destinations</Link><div className="flex items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm"><div className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary"><MapPin className="h-6 w-6" /></div><div><h1 className="text-2xl font-semibold">Add Destination</h1><p className="mt-1 text-sm text-muted-foreground">Create a city or travel area and assign its region.</p></div></div><DestinationForm regions={options} /></div></div>; }

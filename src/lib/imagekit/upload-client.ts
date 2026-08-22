@@ -1,7 +1,36 @@
+export const MEDIA_FOLDERS = {
+  COUNTRIES: "/awesomeroutes/countries",
+  REGIONS: "/awesomeroutes/regions",
+  DESTINATIONS: "/awesomeroutes/destinations",
+  LOCATIONS: "/awesomeroutes/locations",
+  HOTELS: "/awesomeroutes/hotels",
+  ACTIVITIES: "/awesomeroutes/activities",
+  PACKAGES: "/awesomeroutes/packages",
+} as const;
+
+export type MediaFolder =
+  (typeof MEDIA_FOLDERS)[keyof typeof MEDIA_FOLDERS];
+
+export type MediaAsset = {
+  id: string;
+  imagekit_file_id: string;
+  original_url: string;
+  file_path: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  width: number | null;
+  height: number | null;
+  folder: string;
+  alt_text: string | null;
+};
+
 export type ImageKitUploadOptions = {
   file: File;
-  folder: string;
+  folder: MediaFolder;
   fileNamePrefix: string;
+  altText?: string;
+  tags?: string[];
   onProgress?: (progress: number) => void;
 };
 
@@ -14,13 +43,27 @@ type ImageKitAuthResponse = {
 };
 
 type ImageKitUploadResponse = {
+  fileId?: string;
+  name?: string;
   url?: string;
+  filePath?: string;
+  height?: number;
+  width?: number;
+  size?: number;
   error?: string;
   message?: string;
 };
 
+type CreateMediaResponse = {
+  data?: MediaAsset;
+  error?: string;
+};
+
 function getFileExtension(file: File): string {
-  const extension = file.name.split(".").pop()?.toLowerCase();
+  const extension = file.name
+    .split(".")
+    .pop()
+    ?.toLowerCase();
 
   if (
     extension === "png" ||
@@ -34,24 +77,49 @@ function getFileExtension(file: File): string {
   return "jpg";
 }
 
+async function parseResponseJson<T>(
+  response: Response,
+  label: string
+): Promise<T> {
+  const text = await response.text();
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    console.error(`${label} raw response:`, text);
+
+    throw new Error(
+      `${label} returned an invalid response (status ${response.status}).`
+    );
+  }
+}
+
 export async function uploadImageToImageKit({
   file,
   folder,
   fileNamePrefix,
+  altText,
+  tags = [],
   onProgress,
-}: ImageKitUploadOptions): Promise<string> {
-  const authResponse = await fetch("/api/imagekit/auth", {
-    method: "GET",
-    cache: "no-store",
-  });
+}: ImageKitUploadOptions): Promise<MediaAsset> {
+  const authResponse = await fetch(
+    "/api/imagekit/auth",
+    {
+      method: "GET",
+      cache: "no-store",
+    }
+  );
 
   const authData =
-    (await authResponse.json()) as ImageKitAuthResponse;
+    await parseResponseJson<ImageKitAuthResponse>(
+      authResponse,
+      "ImageKit auth API"
+    );
 
   if (!authResponse.ok) {
     throw new Error(
       authData.error ??
-        "Failed to authenticate with ImageKit."
+        `Failed to authenticate with ImageKit (status ${authResponse.status}).`
     );
   }
 
@@ -71,88 +139,167 @@ export async function uploadImageToImageKit({
   const formData = new FormData();
 
   formData.append("file", file);
+
   formData.append(
     "fileName",
     `${fileNamePrefix}.${extension}`
   );
+
   formData.append("folder", folder);
 
-  // Never overwrite an old image.
-  formData.append("useUniqueFileName", "true");
+  // Never overwrite an existing file.
+  formData.append(
+    "useUniqueFileName",
+    "true"
+  );
 
-  formData.append("publicKey", authData.publicKey);
-  formData.append("signature", authData.signature);
-  formData.append("expire", String(authData.expire));
+  formData.append(
+    "publicKey",
+    authData.publicKey
+  );
+
+  formData.append(
+    "signature",
+    authData.signature
+  );
+
+  formData.append(
+    "expire",
+    String(authData.expire)
+  );
+
   formData.append("token", authData.token);
 
-  return new Promise<string>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+  const imageKitResult =
+    await new Promise<ImageKitUploadResponse>(
+      (resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-    xhr.open(
-      "POST",
-      "https://upload.imagekit.io/api/v1/files/upload"
+        xhr.open(
+          "POST",
+          "https://upload.imagekit.io/api/v1/files/upload"
+        );
+
+        xhr.upload.onprogress = (event) => {
+          if (!event.lengthComputable) {
+            return;
+          }
+
+          onProgress?.(
+            Math.round(
+              (event.loaded / event.total) * 100
+            )
+          );
+        };
+
+        xhr.onload = () => {
+          let result: ImageKitUploadResponse;
+
+          try {
+            result = JSON.parse(
+              xhr.responseText
+            ) as ImageKitUploadResponse;
+          } catch {
+            console.error(
+              "ImageKit upload raw response:",
+              xhr.responseText
+            );
+
+            reject(
+              new Error(
+                `ImageKit returned an invalid response (status ${xhr.status}).`
+              )
+            );
+            return;
+          }
+
+          if (
+            xhr.status < 200 ||
+            xhr.status >= 300
+          ) {
+            reject(
+              new Error(
+                result.error ??
+                  result.message ??
+                  `Image upload failed (status ${xhr.status}).`
+              )
+            );
+            return;
+          }
+
+          resolve(result);
+        };
+
+        xhr.onerror = () => {
+          reject(
+            new Error(
+              "Network error while uploading to ImageKit."
+            )
+          );
+        };
+
+        xhr.onabort = () => {
+          reject(
+            new Error(
+              "Image upload was cancelled."
+            )
+          );
+        };
+
+        xhr.send(formData);
+      }
     );
 
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) {
-        return;
-      }
+  if (
+    !imageKitResult.fileId ||
+    !imageKitResult.url ||
+    !imageKitResult.filePath ||
+    !imageKitResult.name
+  ) {
+    throw new Error(
+      "ImageKit upload succeeded but required file details were not returned."
+    );
+  }
 
-      onProgress?.(
-        Math.round((event.loaded / event.total) * 100)
-      );
-    };
+  const mediaResponse = await fetch(
+    "/api/media",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        imagekit_file_id: imageKitResult.fileId,
+        original_url: imageKitResult.url,
+        file_path: imageKitResult.filePath,
+        file_name: imageKitResult.name,
+        original_file_name: file.name,
+        media_type: "image",
+        mime_type: file.type,
+        size_bytes: imageKitResult.size ?? file.size,
+        width: imageKitResult.width ?? null,
+        height: imageKitResult.height ?? null,
+        folder,
+        alt_text: altText ?? null,
+        tags,
+      }),
+    }
+  );
 
-    xhr.onload = () => {
-      let result: ImageKitUploadResponse;
+  const mediaData =
+    await parseResponseJson<CreateMediaResponse>(
+      mediaResponse,
+      "Media Library API"
+    );
 
-      try {
-        result = JSON.parse(xhr.responseText);
-      } catch {
-        reject(
-          new Error(
-            "Invalid response received from ImageKit."
-          )
-        );
-        return;
-      }
+  if (!mediaResponse.ok || !mediaData.data) {
+    throw new Error(
+      mediaData.error ??
+        `Failed to save image in Media Library (status ${mediaResponse.status}).`
+    );
+  }
 
-      if (xhr.status < 200 || xhr.status >= 300) {
-        reject(
-          new Error(
-            result.error ??
-              result.message ??
-              "Image upload failed."
-          )
-        );
-        return;
-      }
+  onProgress?.(100);
 
-      if (!result.url) {
-        reject(
-          new Error(
-            "Image uploaded, but ImageKit did not return a URL."
-          )
-        );
-        return;
-      }
-
-      onProgress?.(100);
-      resolve(result.url);
-    };
-
-    xhr.onerror = () => {
-      reject(
-        new Error(
-          "Network error while uploading to ImageKit."
-        )
-      );
-    };
-
-    xhr.onabort = () => {
-      reject(new Error("Image upload was cancelled."));
-    };
-
-    xhr.send(formData);
-  });
+  return mediaData.data;
 }

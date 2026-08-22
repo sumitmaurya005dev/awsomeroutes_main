@@ -105,16 +105,37 @@ export const superAdminNavigation: SidebarItem[] = [
     children: [
       {
         title: "All Destinations",
-        href: "/dashboard/packages",
+        href: "/home/destinations",
         icon: "list",
         permission: "destinations.view",
       },
 
       {
-        title: "Create Location",
-        href: "/dashboard/packages/create",
+        title: "Create Destination",
+        href: "/home/destinations/create",
         icon: "plus",
         permission: "destinations.create",
+      },
+    ],
+  },
+
+  {
+    title: "Locations",
+    icon: "pin",
+    permission: "locations.view",
+
+    children: [
+      {
+        title: "All Locations",
+        href: "/home/locations",
+        icon: "list",
+        permission: "locations.view",
+      },
+      {
+        title: "Create Location",
+        href: "/home/locations/create",
+        icon: "plus",
+        permission: "locations.create",
       },
     ],
   },
