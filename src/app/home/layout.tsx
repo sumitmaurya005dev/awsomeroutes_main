@@ -27,10 +27,10 @@ export default async function RootLayout({
     redirect("/");
   }
   return (
-    <div className="flex">
+    <div className="flex" >
        <SidebarProvider defaultOpen={defaultOpen}>
         <AppSidebar />
-        <main className="w-full">
+        <main className="w-full p-6" suppressHydrationWarning>
           <Navbar />
           {children}
         </main>

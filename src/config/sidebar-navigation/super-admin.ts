@@ -55,20 +55,20 @@ export const superAdminNavigation: SidebarItem[] = [
   },
    {
     title: "Countries",
-    icon: "map",
+    icon: "globe",
     permission: "countries.view",
 
     children: [
       {
         title: "All Countries",
-        href: "/dashboard/packages",
+        href: "/home/countries",
         icon: "list",
         permission: "countries.view",
       },
 
       {
         title: "Create Country",
-        href: "/dashboard/packages/create",
+        href: "/home/countries/create",
         icon: "plus",
         permission: "countries.create",
       },
@@ -83,14 +83,14 @@ export const superAdminNavigation: SidebarItem[] = [
     children: [
       {
         title: "All Regions",
-        href: "/dashboard/packages",
+        href: "/home/regions",
         icon: "list",
         permission: "regions.view",
       },
 
       {
         title: "Create Region",
-        href: "/dashboard/packages/create",
+        href: "/home/regions/create",
         icon: "plus",
         permission: "regions.create",
       },
@@ -105,16 +105,37 @@ export const superAdminNavigation: SidebarItem[] = [
     children: [
       {
         title: "All Destinations",
-        href: "/dashboard/packages",
+        href: "/home/destinations",
         icon: "list",
         permission: "destinations.view",
       },
 
       {
-        title: "Create Location",
-        href: "/dashboard/packages/create",
+        title: "Create Destination",
+        href: "/home/destinations/create",
         icon: "plus",
         permission: "destinations.create",
+      },
+    ],
+  },
+
+  {
+    title: "Locations",
+    icon: "pin",
+    permission: "locations.view",
+
+    children: [
+      {
+        title: "All Locations",
+        href: "/home/locations",
+        icon: "list",
+        permission: "locations.view",
+      },
+      {
+        title: "Create Location",
+        href: "/home/locations/create",
+        icon: "plus",
+        permission: "locations.create",
       },
     ],
   },
