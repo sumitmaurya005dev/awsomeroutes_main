@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "./get-current-user";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { PermissionKey } from "@/config/permissions";
 
 
 type RolePermissionWithPermission = {
@@ -10,10 +11,7 @@ type RolePermissionWithPermission = {
 };
 
 
-export async function getUserPermissions() {
-  const supabase = await createClient();
-
-  // Get current logged-in user
+export async function getUserPermissions(): Promise<PermissionKey[]> {
   const currentUser = await getCurrentUser();
 
   if (!currentUser?.roleId) {
@@ -22,7 +20,8 @@ export async function getUserPermissions() {
 
 
   // Get all permissions assigned to user's role
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("role_permissions")
     .select(`
       permissions (
@@ -43,7 +42,7 @@ export async function getUserPermissions() {
     data as unknown as RolePermissionWithPermission[];
 
 
-  return permissions.map(
-    (item) => item.permissions.permission_key
-  );
+  return permissions
+    .map((item) => item.permissions?.permission_key)
+    .filter((key): key is PermissionKey => Boolean(key));
 }

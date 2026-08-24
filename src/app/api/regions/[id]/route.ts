@@ -4,6 +4,7 @@ import {
 } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { hasPermission } from "@/lib/auth";
 
 type UpdateRegionBody = {
   name?: unknown;
@@ -32,6 +33,10 @@ export async function PATCH(
   }
 ) {
   try {
+    if (!(await hasPermission("regions.update"))) {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
+
     const { id } = await params;
 
     if (!id) {

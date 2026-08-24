@@ -17,10 +17,12 @@ import type {
   CountryInsert,
   CountryUpdate,
 } from "@/types/country";
+import { requirePermission } from "@/lib/auth";
 
 export async function createCountryAction(
   payload: CountryInsert
 ) {
+  await requirePermission("countries.create");
   const result = createCountrySchema.safeParse(payload);
 
   if (!result.success) {
@@ -55,6 +57,7 @@ export async function updateCountryAction(
   id: string,
   payload: CountryUpdate
 ) {
+  await requirePermission("countries.update");
   const result = updateCountrySchema.safeParse(payload);
 
   if (!result.success) {
@@ -87,6 +90,7 @@ export async function updateCountryAction(
 }
 
 export async function deleteCountryAction(id: string) {
+  await requirePermission("countries.delete");
   try {
     await deleteCountry(id);
 
@@ -110,6 +114,7 @@ export async function updateCountryStatusAction(
   id: string,
   status: Country["status"]
 ) {
+  await requirePermission("countries.update");
   try {
     const country = await updateCountryStatus(id, status);
 

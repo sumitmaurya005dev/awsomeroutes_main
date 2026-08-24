@@ -1,30 +1,43 @@
-'use server'
+'use server';
 
-import { createClient } from "@/lib/supabase/server" // Match your exact file structure!
-import { log } from "console"
-import { redirect } from 'next/navigation'
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+
 export async function login(formData: FormData) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
 
 
   // Guard Clause to prevent empty validations
   if (!email || !password) {
-    return { error: 'Please enter both an email and password.' }
+    return { error: "Please enter both an email and password." };
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
-  })
+  });
 
   if (error) {
-    return { error: error.message }
+    return { error: error.message };
   }
 
-  // Return success; client side router will push them to /dashboard cleanly
-  redirect('/home')
-  return { success: true }
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("status")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (profileError || !profile || profile.status !== "active") {
+    await supabase.auth.signOut();
+
+    return {
+      error:
+        "Your account is inactive or is not configured for portal access. Please contact an administrator.",
+    };
+  }
+
+  redirect("/home");
 }

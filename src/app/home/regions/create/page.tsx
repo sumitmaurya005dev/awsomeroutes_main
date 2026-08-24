@@ -3,8 +3,10 @@ import { ArrowLeft, Map } from "lucide-react";
 
 import { AddRegionForm } from "@/components/regions/add-region-form";
 import { getCountries } from "@/lib/countries/queries";
+import { requirePermission } from "@/lib/auth";
 
 export default async function CreateRegionPage() {
+  await requirePermission("regions.create");
   const { data: countries } = await getCountries({
     limit: 100,
     status: "active",

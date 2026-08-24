@@ -6,6 +6,8 @@ import {
   regionSchema,
   type RegionFormValues,
 } from "./validations";
+import { hasPermission } from "@/lib/auth";
+import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
 
 /**
  * Create Region
@@ -13,6 +15,9 @@ import {
 export async function createRegion(
   values: RegionFormValues
 ) {
+  if (!(await hasPermission("regions.create"))) {
+    return { success: false, error: "You do not have permission to create regions." };
+  }
   const supabase = await createClient();
 
   // ----------------------------------
@@ -195,6 +200,10 @@ export async function updateRegion(
   id: string,
   values: RegionFormValues
 ) {
+  if (!(await hasPermission("regions.update"))) {
+    return { success: false, error: "You do not have permission to update regions." };
+  }
+
   const supabase = await createClient();
 
   // ----------------------------------
@@ -411,6 +420,9 @@ export async function updateRegion(
 export async function deleteRegion(
   id: string
 ) {
+  if (!(await hasPermission("regions.delete"))) {
+    return { success: false, error: "You do not have permission to delete regions." };
+  }
   const supabase = await createClient();
 
   // ----------------------------------
@@ -425,6 +437,26 @@ export async function deleteRegion(
     return {
       success: false,
       error: "You must be logged in.",
+    };
+  }
+
+  const { count, error: dependencyError } = await supabase
+    .from("destinations")
+    .select("id", { count: "exact", head: true })
+    .eq("region_id", id);
+
+  if (dependencyError) {
+    console.error("Error checking region dependencies:", dependencyError);
+    return {
+      success: false,
+      error: "Could not verify whether this region is safe to delete.",
+    };
+  }
+
+  if ((count ?? 0) > 0) {
+    return {
+      success: false,
+      error: `This region cannot be deleted because ${count} ${count === 1 ? "destination is" : "destinations are"} linked to it. Reassign or delete the linked ${count === 1 ? "destination" : "destinations"} first, or mark the region inactive.`,
     };
   }
 
@@ -443,18 +475,9 @@ export async function deleteRegion(
       error
     );
 
-    // Region is being used elsewhere
-    if (error.code === "23503") {
-      return {
-        success: false,
-        error:
-          "This region cannot be deleted because it is being used by another record.",
-      };
-    }
-
     return {
       success: false,
-      error: "Failed to delete region.",
+      error: getDeleteDependencyMessage(error, "Failed to delete region."),
     };
   }
 

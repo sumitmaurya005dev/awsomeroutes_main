@@ -105,6 +105,7 @@
 // ---------------------------------------------new code  here-----------------------------------
 
 import { createClient } from "@/lib/supabase/server";
+import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
 import type {
   Country,
   CountryInsert,
@@ -189,6 +190,22 @@ export async function deleteCountry(
 ): Promise<void> {
   const supabase = await createClient();
 
+  const { count, error: dependencyError } = await supabase
+    .from("regions")
+    .select("id", { count: "exact", head: true })
+    .eq("country_id", id);
+
+  if (dependencyError) {
+    console.error("Error checking country dependencies:", dependencyError);
+    throw new Error("Could not verify whether this country is safe to delete.");
+  }
+
+  if ((count ?? 0) > 0) {
+    throw new Error(
+      `This country cannot be deleted because ${count} ${count === 1 ? "region is" : "regions are"} linked to it. Reassign or delete the linked ${count === 1 ? "region" : "regions"} first, or mark the country inactive.`,
+    );
+  }
+
   const { error } = await supabase
     .from("countries")
     .delete()
@@ -196,9 +213,8 @@ export async function deleteCountry(
 
   if (error) {
     console.error("Error deleting country:", error);
-
     throw new Error(
-      error.message || "Failed to delete country",
+      getDeleteDependencyMessage(error, "Failed to delete country."),
     );
   }
 }

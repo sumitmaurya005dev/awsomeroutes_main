@@ -114,14 +114,10 @@
 
 "use client";
 
-import {
-  Bell,
-  ChevronsUpDown,
-  HelpCircle,
-  LogOut,
-  Settings,
-  User,
-} from "lucide-react";
+import Image from "next/image";
+
+import { ChevronsUpDown, LogOut, User } from "lucide-react";
+import { logoutAction } from "@/actions/auth/logout";
 
 import {
   DropdownMenu,
@@ -219,7 +215,18 @@ export default function AppSidebarFooter({
                 group-data-[collapsible=icon]:w-9
               "
             >
-              {initials}
+              {user.avatar ? (
+                <Image
+                  src={user.avatar}
+                  alt={`${user.firstName ?? "User"} profile photo`}
+                  width={72}
+                  height={72}
+                  unoptimized
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                initials
+              )}
             </div>
 
             {/* User Information */}
@@ -270,30 +277,16 @@ export default function AppSidebarFooter({
             "
           >
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { window.location.href = "/home/profile"; }}>
                 <User className="mr-2 h-4 w-4" />
                 My Profile
               </DropdownMenuItem>
 
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Account Settings
-              </DropdownMenuItem>
-
-              <DropdownMenuItem>
-                <Bell className="mr-2 h-4 w-4" />
-                Notifications
-              </DropdownMenuItem>
-
-              <DropdownMenuItem>
-                <HelpCircle className="mr-2 h-4 w-4" />
-                Help & Support
-              </DropdownMenuItem>
             </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
 
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={logoutAction}>
               <LogOut className="mr-2 h-4 w-4" />
               Log Out
             </DropdownMenuItem>

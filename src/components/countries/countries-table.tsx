@@ -239,9 +239,9 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { DataPagination } from "@/components/common/data-pagination";
+import { deleteCountryAction } from "@/actions/countries/actions";
 
 import type { Country } from "@/types/country";
 import { EditCountryDialog } from "./edit-country-dialog";
@@ -252,7 +252,8 @@ interface CountriesTableProps {
   page: number;
   limit: number;
   totalPages: number;
-  canManage?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 export function CountriesTable({
@@ -261,51 +262,37 @@ export function CountriesTable({
   page,
   limit,
   totalPages,
-  canManage = false,
+  canUpdate = false,
+  canDelete = false,
 }: CountriesTableProps) {
+  const router = useRouter();
   const [editingCountry, setEditingCountry] =
     React.useState<Country | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  const start =
-    count === 0
-      ? 0
-      : (page - 1) * limit + 1;
-
-  const end = Math.min(
-    page * limit,
-    count,
-  );
-
-  function goToPage(nextPage: number) {
-    if (
-      nextPage < 1 ||
-      nextPage > totalPages ||
-      nextPage === page
-    ) {
-      return;
+  async function handleDelete(country: Country) {
+    if (!window.confirm(`Delete ${country.name}? This action cannot be undone.`)) return;
+    setDeletingId(country.id);
+    setDeleteError(null);
+    try {
+      const result = await deleteCountryAction(country.id);
+      if (!result.success) {
+        setDeleteError(result.error);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setDeleteError("Failed to delete country.");
+    } finally {
+      setDeletingId(null);
     }
-
-    const params = new URLSearchParams(
-      searchParams.toString(),
-    );
-
-    params.set(
-      "page",
-      String(nextPage),
-    );
-
-    router.push(
-      `${pathname}?${params.toString()}`,
-    );
   }
 
   return (
     <>
       <div className="space-y-4">
+        {deleteError && <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{deleteError}</p>}
 
         {/* Table Card */}
 
@@ -503,9 +490,7 @@ export function CountriesTable({
 
                         <div className="flex items-center justify-end gap-2">
 
-                          {canManage && (
-
-                            <>
+                          {canUpdate && (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -515,18 +500,16 @@ export function CountriesTable({
                               >
                                 Edit
                               </button>
-
+                          )}
+                          {canDelete && (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  // Delete functionality
-                                }}
+                                onClick={() => handleDelete(country)}
+                                disabled={deletingId === country.id}
                                 className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 px-3 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               >
-                                Delete
+                                {deletingId === country.id ? "Deleting..." : "Delete"}
                               </button>
-                            </>
-
                           )}
 
                         </div>

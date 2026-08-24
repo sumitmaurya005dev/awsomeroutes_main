@@ -29,7 +29,7 @@ export default function PortalLoginPage() {
         router.push("/home");
         router.refresh();
       }
-    } catch (err: any) {
+    } catch {
       setErrorMessage("An unexpected network error occurred.");
     } finally {
       setIsLoading(false);

@@ -8,19 +8,17 @@
  * we can import everything from "@/lib/auth".
  *
  * Example:
- * import { getCurrentUser, can, hasRole } from "@/lib/auth";
+ * import { getCurrentUser, can, requirePermission } from "@/lib/auth";
  *
  * Exports:
  * - getCurrentUser       → Returns currently authenticated user with role details
  * - getUserPermissions   → Returns permissions assigned to user's role
- * - hasRole              → Checks whether user has a specific role
+ * - requirePermission    → Enforces a permission on the server
  * - can                  → Checks whether user has a specific permission
  */
 
-import { filterSidebar } from "./fiter-sidebar";
-
 export { getCurrentUser } from "./get-current-user";
 export { getUserPermissions } from "./get-user-permission";
-export { hasRole } from "./has-role";
 export { can } from "./can";
-export {filterSidebar} from "./fiter-sidebar"
+export { filterSidebar } from "./fiter-sidebar";
+export { hasPermission, requirePermission } from "./require-permission";

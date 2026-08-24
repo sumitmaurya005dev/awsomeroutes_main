@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { locationSchema, type LocationFormValues } from "./validations";
+import { hasPermission } from "@/lib/auth";
+import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
 
 async function validateDestinationAndAsset(values: LocationFormValues) {
   const supabase = await createClient();
@@ -15,6 +17,7 @@ async function validateDestinationAndAsset(values: LocationFormValues) {
 }
 
 export async function createLocation(values: LocationFormValues) {
+  if (!(await hasPermission("locations.create"))) return { success: false as const, error: "You do not have permission to create locations." };
   const parsed = locationSchema.safeParse(values);
   if (!parsed.success) return { success: false as const, error: "Please check the form fields." };
   const valid = await validateDestinationAndAsset(parsed.data);
@@ -25,6 +28,7 @@ export async function createLocation(values: LocationFormValues) {
 }
 
 export async function updateLocation(id: string, values: LocationFormValues) {
+  if (!(await hasPermission("locations.update"))) return { success: false as const, error: "You do not have permission to update locations." };
   const parsed = locationSchema.safeParse(values);
   if (!parsed.success) return { success: false as const, error: "Please check the form fields." };
   const valid = await validateDestinationAndAsset(parsed.data);
@@ -32,4 +36,36 @@ export async function updateLocation(id: string, values: LocationFormValues) {
   const { data, error } = await valid.supabase.from("locations").update({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, address: parsed.data.address || null, image_url: parsed.data.image_url || null, image_asset_id: parsed.data.image_asset_id || null, updated_at: new Date().toISOString() }).eq("id", id).select().single();
   if (error) return { success: false as const, error: error.code === "23505" ? "A location with this slug already exists in this destination." : error.message };
   return { success: true as const, data };
+}
+
+export async function deleteLocation(id: string) {
+  if (!(await hasPermission("locations.delete"))) {
+    return { success: false as const, error: "You do not have permission to delete locations." };
+  }
+
+  const supabase = await createClient();
+  const { count, error: dependencyError } = await supabase
+    .from("locations")
+    .select("id", { count: "exact", head: true })
+    .eq("parent_location_id", id);
+
+  if (dependencyError) {
+    console.error("Error checking location dependencies:", dependencyError);
+    return { success: false as const, error: "Could not verify whether this location is safe to delete." };
+  }
+
+  if ((count ?? 0) > 0) {
+    return {
+      success: false as const,
+      error: `This location cannot be deleted because ${count} child ${count === 1 ? "location is" : "locations are"} linked to it. Reassign or delete the linked ${count === 1 ? "location" : "locations"} first, or mark this location inactive.`,
+    };
+  }
+
+  const { error } = await supabase.from("locations").delete().eq("id", id);
+  if (error) {
+    console.error("Error deleting location:", error);
+    return { success: false as const, error: getDeleteDependencyMessage(error, "Failed to delete location.") };
+  }
+
+  return { success: true as const };
 }

@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
-import type { Region } from "@/types/region";
 import type { RegionWithCountry } from "@/lib/regions/queries";
 
 import { DataPagination } from "@/components/common/data-pagination";
 import { EditRegionDialog } from "./edit-region-dialog";
+import { deleteRegionAction } from "@/actions/regions/actions";
 
 interface RegionsTableProps {
   data: RegionWithCountry[];
@@ -15,7 +16,8 @@ interface RegionsTableProps {
   page: number;
   limit: number;
   totalPages: number;
-  canManage?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
 }
 
 export function RegionsTable({
@@ -24,14 +26,42 @@ export function RegionsTable({
   page,
   limit,
   totalPages,
-  canManage = false,
+  canUpdate = false,
+  canDelete = false,
 }: RegionsTableProps) {
+  const router = useRouter();
   const [editingRegion, setEditingRegion] =
     React.useState<RegionWithCountry | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
+
+  async function handleDelete(region: RegionWithCountry) {
+    const regionId = region.id;
+    if (!regionId) {
+      setDeleteError("Region identifier is missing.");
+      return;
+    }
+    if (!window.confirm(`Delete ${region.name}? This action cannot be undone.`)) return;
+    setDeletingId(regionId);
+    setDeleteError(null);
+    try {
+      const result = await deleteRegionAction(regionId);
+      if (!result.success) {
+        setDeleteError(result.error ?? "Failed to delete region.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setDeleteError("Failed to delete region.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <>
       <div className="space-y-4">
+        {deleteError && <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">{deleteError}</p>}
         {/* Table Card */}
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
           {/* Horizontal scroll only */}
@@ -168,9 +198,7 @@ export function RegionsTable({
                       {/* Actions */}
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-2">
-                          {canManage && (
-                            <>
-                              {/* Edit */}
+                          {canUpdate && (
                               <button
                                 type="button"
                                 onClick={() =>
@@ -180,19 +208,16 @@ export function RegionsTable({
                               >
                                 Edit
                               </button>
-
-                              {/* Delete */}
+                          )}
+                          {canDelete && (
                               <button
                                 type="button"
-                                onClick={() => {
-                                  // Delete functionality
-                                  // will be connected next.
-                                }}
+                                onClick={() => handleDelete(region)}
+                                disabled={deletingId === region.id}
                                 className="inline-flex h-8 items-center justify-center rounded-md border border-destructive/30 bg-destructive/5 px-3 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                               >
-                                Delete
+                                {deletingId === region.id ? "Deleting..." : "Delete"}
                               </button>
-                            </>
                           )}
                         </div>
                       </td>

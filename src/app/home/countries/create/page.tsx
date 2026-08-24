@@ -2,8 +2,10 @@ import Link from "next/link";
 import { ArrowLeft, Globe2 } from "lucide-react";
 
 import { AddCountryForm } from "@/components/countries/add-country-form";
+import { requirePermission } from "@/lib/auth";
 
-export default function CreateCountryPage() {
+export default async function CreateCountryPage() {
+  await requirePermission("countries.create");
   return (
     <div className="min-h-full bg-background">
       <div className="mx-auto w-full max-w-[1000px] space-y-6 p-4 sm:p-6 lg:p-8">

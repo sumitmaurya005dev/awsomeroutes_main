@@ -1,7 +1,8 @@
 import { getUserPermissions } from "./get-user-permission";
+import type { PermissionKey } from "@/config/permissions";
 
 
-export async function can(permission: string): Promise<boolean> {
+export async function can(permission: PermissionKey): Promise<boolean> {
 
   const permissions = await getUserPermissions();
 

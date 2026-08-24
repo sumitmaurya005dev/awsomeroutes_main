@@ -15,10 +15,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-import { createClient } from "@/lib/supabase/server";
 import SearchInput from "@/components/common/search-input";
 import SortSelect from "@/components/common/sort-select";
 import FilterSelect from "@/components/common/filter-select";
+import { hasPermission } from "@/lib/auth";
+import { notFound } from "next/navigation";
 
 interface RegionsPageProps {
   searchParams: Promise<{
@@ -103,53 +104,12 @@ export default async function RegionsPage({
       ? requestedPage
       : 1;
 
-  // --------------------------------------------------
-  // Supabase
-  // --------------------------------------------------
-
-  const supabase = await createClient();
-
-  // --------------------------------------------------
-  // Current user
-  // --------------------------------------------------
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
-
-  // --------------------------------------------------
-  // Get user's profile / role
-  // --------------------------------------------------
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role_id")
-    .eq("id", user.id)
-    .single();
-
-  let roleSlug: string | null = null;
-
-  if (profile?.role_id) {
-    const { data: role } = await supabase
-      .from("roles")
-      .select("slug")
-      .eq("id", profile.role_id)
-      .single();
-
-    roleSlug = role?.slug ?? null;
-  }
-
-  // --------------------------------------------------
-  // Region management permission
-  // --------------------------------------------------
-
-  const canManageRegions =
-    roleSlug === "admin" ||
-    roleSlug === "super_admin";
+  if (!(await hasPermission("regions.view"))) notFound();
+  const [canCreateRegions, canUpdateRegions, canDeleteRegions] = await Promise.all([
+    hasPermission("regions.create"),
+    hasPermission("regions.update"),
+    hasPermission("regions.delete"),
+  ]);
 
   // --------------------------------------------------
   // Regions
@@ -170,18 +130,6 @@ export default async function RegionsPage({
     sortBy,
     sortOrder,
   });
-
-  // --------------------------------------------------
-  // Countries for filter
-  // --------------------------------------------------
-
-  const { data: countries } = await supabase
-    .from("countries")
-    .select("id, name")
-    .eq("status", "active")
-    .order("name", {
-      ascending: true,
-    });
 
   return (
     <div className="min-h-full bg-background">
@@ -243,7 +191,7 @@ export default async function RegionsPage({
           </div>
 
           {/* Add Region */}
-          {canManageRegions && (
+          {canCreateRegions && (
             <Link
               href="/home/regions/create"
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -351,7 +299,8 @@ export default async function RegionsPage({
             page={page}
             limit={limit}
             totalPages={totalPages}
-            canManage={canManageRegions}
+            canUpdate={canUpdateRegions}
+            canDelete={canDeleteRegions}
           />
 
         </section>

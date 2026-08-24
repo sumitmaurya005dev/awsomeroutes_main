@@ -13,10 +13,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-import { createClient } from "@/lib/supabase/server";
 import SearchInput from "@/components/common/search-input";
 import SortSelect from "@/components/common/sort-select";
 import FilterSelect from "@/components/common/filter-select";
+import { hasPermission } from "@/lib/auth";
+import { notFound } from "next/navigation";
 
 interface CountriesPageProps {
   searchParams: Promise<{
@@ -77,49 +78,12 @@ export default async function CountriesPage({
       ? requestedPage
       : 1;
 
-  const supabase = await createClient();
-
-  // --------------------------------------------------
-  // Current user
-  // --------------------------------------------------
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
-
-  // --------------------------------------------------
-  // Get user's profile / role
-  // --------------------------------------------------
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role_id")
-    .eq("id", user.id)
-    .single();
-
-  let roleSlug: string | null = null;
-
-  if (profile?.role_id) {
-    const { data: role } = await supabase
-      .from("roles")
-      .select("slug")
-      .eq("id", profile.role_id)
-      .single();
-
-    roleSlug = role?.slug ?? null;
-  }
-
-  // --------------------------------------------------
-  // Country management permission
-  // --------------------------------------------------
-
-  const canManageCountries =
-    roleSlug === "admin" ||
-    roleSlug === "super_admin";
+  if (!(await hasPermission("countries.view"))) notFound();
+  const [canCreateCountries, canUpdateCountries, canDeleteCountries] = await Promise.all([
+    hasPermission("countries.create"),
+    hasPermission("countries.update"),
+    hasPermission("countries.delete"),
+  ]);
 
   // --------------------------------------------------
   // Countries
@@ -198,7 +162,7 @@ export default async function CountriesPage({
           </div>
 
           {/* Add Country */}
-          {canManageCountries && (
+          {canCreateCountries && (
             <Link
               href="/home/countries/create"
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -308,7 +272,8 @@ export default async function CountriesPage({
             page={page}
             limit={limit}
             totalPages={totalPages}
-            canManage={canManageCountries}
+            canUpdate={canUpdateCountries}
+            canDelete={canDeleteCountries}
           />
 
         </section>

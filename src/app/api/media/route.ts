@@ -4,6 +4,7 @@ import {
 } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { hasPermission } from "@/lib/auth";
 
 type CreateMediaBody = {
   imagekit_file_id?: unknown;
@@ -41,6 +42,20 @@ const ALLOWED_IMAGE_MIME_TYPES = [
   "image/webp",
 ];
 
+const ALLOWED_MEDIA_FOLDERS = new Set([
+  "/awesomeroutes/countries",
+  "/awesomeroutes/regions",
+  "/awesomeroutes/destinations",
+  "/awesomeroutes/locations",
+  "/awesomeroutes/hotels",
+  "/awesomeroutes/activities",
+  "/awesomeroutes/packages",
+]);
+
+async function canManageMediaLibrary(permission: "media.view" | "media.create") {
+  return hasPermission(permission);
+}
+
 function isString(
   value: unknown
 ): value is string {
@@ -70,6 +85,10 @@ function isStringArray(
 
 export async function GET(request: NextRequest) {
   try {
+    if (!(await canManageMediaLibrary("media.view"))) {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -132,6 +151,10 @@ export async function POST(
   request: NextRequest
 ) {
   try {
+    if (!(await canManageMediaLibrary("media.create"))) {
+      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    }
+
     const supabase = await createClient();
 
     const {
@@ -220,9 +243,7 @@ export async function POST(
     }
 
     if (
-      !body.folder.startsWith(
-        "/awesomeroutes"
-      )
+      !ALLOWED_MEDIA_FOLDERS.has(body.folder)
     ) {
       return NextResponse.json(
         {

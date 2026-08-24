@@ -216,14 +216,14 @@ export const superAdminNavigation: SidebarItem[] = [
   children: [
     {
       title: "All Users",
-      href: "/dashboard/users",
+      href: "/home/users",
       icon: "list",
       permission: "users.view",
     },
 
     {
       title: "Create User",
-      href: "/dashboard/users/create",
+      href: "/home/users/create",
       icon: "plus",
       permission: "users.create",
     },
@@ -238,14 +238,14 @@ export const superAdminNavigation: SidebarItem[] = [
   children: [
     {
       title: "All Roles",
-      href: "/dashboard/roles",
+      href: "/home/roles",
       icon: "list",
       permission: "roles.view",
     },
 
     {
       title: "Create Role",
-      href: "/dashboard/roles/create",
+      href: "/home/roles/create",
       icon: "plus",
       permission: "roles.create",
     },
@@ -260,9 +260,15 @@ export const superAdminNavigation: SidebarItem[] = [
   children: [
     {
       title: "Permission Matrix",
-      href: "/dashboard/permissions",
+      href: "/home/permissions",
       icon: "list",
       permission: "permissions.view",
+    },
+    {
+      title: "Create Permission",
+      href: "/home/permissions/create",
+      icon: "plus",
+      permission: "permissions.create",
     },
   ],
 },

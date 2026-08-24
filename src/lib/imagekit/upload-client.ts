@@ -6,6 +6,7 @@ export const MEDIA_FOLDERS = {
   HOTELS: "/awesomeroutes/hotels",
   ACTIVITIES: "/awesomeroutes/activities",
   PACKAGES: "/awesomeroutes/packages",
+  PROFILES: "/awesomeroutes/profiles",
 } as const;
 
 export type MediaFolder =

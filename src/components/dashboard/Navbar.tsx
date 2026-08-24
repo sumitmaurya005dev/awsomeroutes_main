@@ -114,10 +114,13 @@ import { logoutAction } from "@/actions/auth/logout";
 import { SidebarTrigger } from "../ui/sidebar";
 import { cn } from "@/lib/utils";
 
-const Navbar = () => {
+type NavbarUser = { firstName: string | null; lastName: string | null; avatar: string | null; role: { name: string } };
+
+const Navbar = ({ user }: { user: NavbarUser }) => {
   const { setTheme } = useTheme();
 
   const [isScrolled, setIsScrolled] = React.useState(false);
+  const initials = `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "U";
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -314,8 +317,8 @@ const Navbar = () => {
               )}
             >
               <AvatarImage
-                src="https://github.com/shadcn.png"
-                alt="User"
+                src={user.avatar ?? undefined}
+                alt={`${user.firstName ?? "User"} profile photo`}
               />
 
               <AvatarFallback
@@ -325,7 +328,7 @@ const Navbar = () => {
                   "text-primary-foreground"
                 )}
               >
-                CN
+                {initials}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
@@ -347,15 +350,11 @@ const Navbar = () => {
                 Account
               </DropdownMenuLabel>
 
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { window.location.href = "/home/profile"; }}>
                 <User className="mr-2 h-[1.2rem] w-[1.2rem]" />
                 Profile
               </DropdownMenuItem>
 
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-[1.2rem] w-[1.2rem]" />
-                Settings
-              </DropdownMenuItem>
             </DropdownMenuGroup>
 
             <DropdownMenuSeparator />

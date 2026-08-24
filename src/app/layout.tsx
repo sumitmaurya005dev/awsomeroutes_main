@@ -5,10 +5,6 @@ import {  JetBrains_Mono, Geist } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
-
-
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const fontMono = JetBrains_Mono({

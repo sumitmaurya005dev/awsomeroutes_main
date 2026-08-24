@@ -19,6 +19,20 @@ export const PERMISSIONS = {
     DELETE: "destinations.delete",
   },
 
+  COUNTRIES: {
+    VIEW: "countries.view",
+    CREATE: "countries.create",
+    UPDATE: "countries.update",
+    DELETE: "countries.delete",
+  },
+
+  REGIONS: {
+    VIEW: "regions.view",
+    CREATE: "regions.create",
+    UPDATE: "regions.update",
+    DELETE: "regions.delete",
+  },
+
   LOCATIONS: {
     VIEW: "locations.view",
     CREATE: "locations.create",
@@ -59,7 +73,33 @@ export const PERMISSIONS = {
     DELETE: "users.delete",
   },
 
+  ROLES: {
+    VIEW: "roles.view",
+    CREATE: "roles.create",
+    UPDATE: "roles.update",
+    DELETE: "roles.delete",
+  },
+
+  PERMISSIONS: {
+    VIEW: "permissions.view",
+    CREATE: "permissions.create",
+    UPDATE: "permissions.update",
+    DELETE: "permissions.delete",
+  },
+
+  MEDIA: {
+    VIEW: "media.view",
+    CREATE: "media.create",
+    UPDATE: "media.update",
+    DELETE: "media.delete",
+  },
+
   SETTINGS: {
     MANAGE: "settings.manage",
   },
 } as const;
+
+type ValueOf<T> = T[keyof T];
+export type PermissionKey = ValueOf<{
+  [Group in keyof typeof PERMISSIONS]: ValueOf<(typeof PERMISSIONS)[Group]>;
+}>;

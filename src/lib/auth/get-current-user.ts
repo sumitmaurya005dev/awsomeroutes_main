@@ -22,11 +22,11 @@ export async function getCurrentUser(){
         error:profileError
     }= await supabase
             .from("profiles")
-            .select(`id,first_name,last_name,avatar_url,phone,role:roles(id,name,slug),role_id`)
+            .select(`id,first_name,last_name,avatar_url,phone,status,role:roles(id,name,slug),role_id`)
             .eq("id",user.id)
             .single();
 
-    if(profileError || !profile || !profile.role){
+    if(profileError || !profile || profile.status !== "active" || !profile.role){
         return null
     }
    

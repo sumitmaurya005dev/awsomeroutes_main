@@ -1,4 +1,5 @@
 import type { IconName } from "@/lib/sidebar-icons";
+import type { PermissionKey } from "@/config/permissions";
 
 export interface SidebarItem {
   title: string;
@@ -7,7 +8,7 @@ export interface SidebarItem {
 
   icon: IconName;
 
-  permission?: string;
+  permission?: PermissionKey;
 
   children?: SidebarItem[];
 }

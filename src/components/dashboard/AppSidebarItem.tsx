@@ -533,7 +533,6 @@
 
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -569,7 +568,7 @@ export default function AppSidebarItem({
 }: AppSidebarItemProps) {
   const pathname = usePathname();
 
-  const { open, setOpen, isMobile } = useSidebar();
+  const { open, setOpen, isMobile, setOpenMobile } = useSidebar();
 
   const Icon = sidebarIcons[item.icon];
 
@@ -602,30 +601,10 @@ export default function AppSidebarItem({
     isActive || isParentActive;
 
 
-  /**
-   *  Once Any Submenu item is selected then the sidebar must closed
-   */
-    const { setOpenMobile } = useSidebar();
-
-  /*
-   * When current route belongs to this menu,
-   * make sure its submenu is open.
-   */
-  React.useEffect(() => {
-    if (isParentActive && !isOpen) {
-      onToggle();
-    }
-  }, [isParentActive]);
-
-  /*
-   * When sidebar is collapsed,
-   * close any currently open submenu.
-   */
-  React.useEffect(() => {
-    if (!open && isOpen) {
-      onToggle();
-    }
-  }, [open, isOpen]);
+  // Keep the submenu for the current route visible without synchronously
+  // mutating parent state from an effect. The previous pair of effects could
+  // toggle each other forever while the desktop sidebar was collapsed.
+  const submenuIsOpen = isOpen || isParentActive;
 
   /*
    * ================================
@@ -679,7 +658,9 @@ export default function AppSidebarItem({
      */
     if (!open) {
       setOpen(true);
-      onToggle();
+      if (!submenuIsOpen) {
+        onToggle();
+      }
       return;
     }
 
@@ -695,7 +676,7 @@ export default function AppSidebarItem({
 
   return (
     <Collapsible
-      open={isOpen}
+      open={submenuIsOpen}
       onOpenChange={() => {
         handleParentClick();
       }}
@@ -720,7 +701,7 @@ export default function AppSidebarItem({
           </span>
 
           <ChevronRight
-  className={`ml-auto size-4 shrink-0 transition-transform duration-200 ${isOpen ? "rotate-90" : "rotate-0"} group-data-[collapsible=icon]:hidden`}
+  className={`ml-auto size-4 shrink-0 transition-transform duration-200 ${submenuIsOpen ? "rotate-90" : "rotate-0"} group-data-[collapsible=icon]:hidden`}
 />
         </CollapsibleTrigger>
 

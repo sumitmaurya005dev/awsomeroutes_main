@@ -1,9 +1,10 @@
 import type { SidebarItem } from "@/types/sidebar-navigation";
+import type { PermissionKey } from "@/config/permissions";
 
 
 export function filterSidebar(
   items: SidebarItem[],
-  permissions: string[]
+  permissions: PermissionKey[]
 ): SidebarItem[] {
 
   return items
