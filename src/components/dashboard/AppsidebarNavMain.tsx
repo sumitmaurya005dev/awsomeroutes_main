@@ -114,11 +114,11 @@
 //   );
 // }
 
-
 //  another new code --------------------------------------
 "use client";
 
 import * as React from "react";
+import { usePathname } from "next/navigation";
 
 import {
   SidebarGroup,
@@ -136,22 +136,28 @@ interface Props {
   items: SidebarItem[];
 }
 
-export default function AppSidebarNavMain({
-  items,
-}: Props) {
-  const [openParent, setOpenParent] = React.useState<string | null>(null);
+export default function AppSidebarNavMain({ items }: Props) {
+  const pathname = usePathname();
+  const activeParent = getActiveParent(items, pathname);
+  const [menuState, setMenuState] = React.useState<{
+    pathname: string;
+    openParent: string | null;
+  }>(() => ({ pathname, openParent: activeParent }));
+  const openParent =
+    menuState.pathname === pathname ? menuState.openParent : activeParent;
 
   const handleParentToggle = (title: string) => {
-    setOpenParent((current) =>
-      current === title ? null : title
-    );
+    setMenuState({
+      pathname,
+      openParent: openParent === title ? null : title,
+    });
   };
 
   return (
     <>
       {sidebarGroups.map((group) => {
         const groupItems = items.filter((item) =>
-          group.menus.includes(item.title)
+          group.menus.includes(item.title),
         );
 
         if (groupItems.length === 0) {
@@ -159,10 +165,7 @@ export default function AppSidebarNavMain({
         }
 
         return (
-          <SidebarGroup
-            key={group.label}
-            className="px-1 py-2"
-          >
+          <SidebarGroup key={group.label} className="px-1 py-2">
             <SidebarGroupLabel
               className="
                 mb-2
@@ -186,9 +189,7 @@ export default function AppSidebarNavMain({
                     key={item.title}
                     item={item}
                     isOpen={openParent === item.title}
-                    onToggle={() =>
-                      handleParentToggle(item.title)
-                    }
+                    onToggle={() => handleParentToggle(item.title)}
                   />
                 ))}
               </SidebarMenu>
@@ -197,5 +198,17 @@ export default function AppSidebarNavMain({
         );
       })}
     </>
+  );
+}
+
+function getActiveParent(items: SidebarItem[], pathname: string) {
+  return (
+    items.find((item) =>
+      item.children?.some(
+        (child) =>
+          !!child.href &&
+          (pathname === child.href || pathname.startsWith(`${child.href}/`)),
+      ),
+    )?.title ?? null
   );
 }

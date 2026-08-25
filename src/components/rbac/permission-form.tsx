@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { savePermission } from "@/lib/rbac/admin";
+import { getNetworkErrorMessage } from "@/lib/client/network-error";
 
 type Permission = { id: string; module: string; action: string; permission_key: string; description: string | null };
 
@@ -22,19 +23,24 @@ export function PermissionForm({ permission }: { permission?: Permission }) {
     event.preventDefault();
     setSaving(true);
     setError(null);
-    const result = await savePermission(permission?.id ?? null, {
-      module,
-      action,
-      permission_key: permission?.permission_key ?? permissionKey,
-      description: description || null,
-    });
-    setSaving(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      const result = await savePermission(permission?.id ?? null, {
+        module,
+        action,
+        permission_key: permission?.permission_key ?? permissionKey,
+        description: description || null,
+      });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      router.push("/home/permissions");
+      router.refresh();
+    } catch (caught) {
+      setError(getNetworkErrorMessage(caught, "Could not save the permission."));
+    } finally {
+      setSaving(false);
     }
-    router.push("/home/permissions");
-    router.refresh();
   }
 
   return (

@@ -95,6 +95,7 @@ import {
   User,
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -117,6 +118,7 @@ import { cn } from "@/lib/utils";
 type NavbarUser = { firstName: string | null; lastName: string | null; avatar: string | null; role: { name: string } };
 
 const Navbar = ({ user }: { user: NavbarUser }) => {
+  const router = useRouter();
   const { setTheme } = useTheme();
 
   const [isScrolled, setIsScrolled] = React.useState(false);
@@ -350,7 +352,7 @@ const Navbar = ({ user }: { user: NavbarUser }) => {
                 Account
               </DropdownMenuLabel>
 
-              <DropdownMenuItem onClick={() => { window.location.href = "/home/profile"; }}>
+              <DropdownMenuItem onClick={() => router.push("/home/profile")}>
                 <User className="mr-2 h-[1.2rem] w-[1.2rem]" />
                 Profile
               </DropdownMenuItem>

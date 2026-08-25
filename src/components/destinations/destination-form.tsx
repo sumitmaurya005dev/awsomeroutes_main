@@ -89,7 +89,10 @@ export function DestinationForm({
     if (onSuccess) {
       onSuccess();
       router.refresh();
-    } else window.location.href = "/home/destinations";
+    } else {
+      router.push("/home/destinations");
+      router.refresh();
+    }
   };
   return (
     <>
@@ -245,7 +248,7 @@ export function DestinationForm({
             disabled={saving}
             onClick={() => {
               if (onSuccess) onSuccess();
-              else window.location.href = "/home/destinations";
+              else router.push("/home/destinations");
             }}
           >
             Cancel

@@ -11,7 +11,9 @@ const detailsSchema = z.object({
 
 const passwordSchema = z.object({
   current_password: z.string().min(1, "Current password is required.").max(128),
-  password: z.string().min(8, "Password must contain at least 8 characters.").max(128),
+  password: z.string().min(12, "Password must contain at least 12 characters.").max(128)
+    .regex(/[A-Za-z]/, "Password must contain a letter.")
+    .regex(/[0-9]/, "Password must contain a number."),
 }).refine((value) => value.current_password !== value.password, {
   path: ["password"],
   message: "New password must be different from the current password.",
@@ -52,6 +54,12 @@ export async function changeOwnPassword(input: z.infer<typeof passwordSchema>) {
   }
 
   const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) return { success: false as const, error: error.message };
 
-  return error ? { success: false as const, error: error.message } : { success: true as const };
+  const admin = createAdminClient();
+  const { error: profileError } = await admin
+    .from("profiles")
+    .update({ must_change_password: false, updated_at: new Date().toISOString() })
+    .eq("id", user.id);
+  return profileError ? { success: false as const, error: "Password changed, but account setup could not be completed. Contact an administrator." } : { success: true as const };
 }

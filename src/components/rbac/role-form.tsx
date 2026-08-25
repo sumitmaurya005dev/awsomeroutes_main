@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { saveRole } from "@/lib/rbac/admin";
+import { getNetworkErrorMessage } from "@/lib/client/network-error";
 
 type Role = { id: string; name: string; slug: string; description: string | null };
 type Permission = { id: string; module: string; action: string; permission_key: string; description: string | null };
@@ -57,19 +58,24 @@ export function RoleForm({
     event.preventDefault();
     setSaving(true);
     setError(null);
-    const result = await saveRole(role?.id ?? null, {
-      name,
-      slug,
-      description: description || null,
-      permission_ids: isSuperAdmin ? permissions.map((permission) => permission.id) : permissionIds,
-    });
-    setSaving(false);
-    if (!result.success) {
-      setError(result.error);
-      return;
+    try {
+      const result = await saveRole(role?.id ?? null, {
+        name,
+        slug,
+        description: description || null,
+        permission_ids: isSuperAdmin ? permissions.map((permission) => permission.id) : permissionIds,
+      });
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      router.push("/home/roles");
+      router.refresh();
+    } catch (caught) {
+      setError(getNetworkErrorMessage(caught, "Could not save the role."));
+    } finally {
+      setSaving(false);
     }
-    router.push("/home/roles");
-    router.refresh();
   }
 
   return (

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { createManagedUser } from "@/lib/rbac/admin";
+import { getNetworkErrorMessage } from "@/lib/client/network-error";
 
 type Role = { id: string; name: string };
 
@@ -31,36 +32,37 @@ export function AddUserForm({ roles }: { roles: Role[] }) {
     setSaving(true);
     setError(null);
 
-    const result = await createManagedUser({
-      ...form,
-      last_name: form.last_name || null,
-      phone: form.phone || null,
-    });
-
-    if (!result.success) {
-      setSaving(false);
-      setError(result.error);
-      return;
-    }
-
-    if (avatar && result.userId) {
-      const data = new FormData();
-      data.append("file", avatar);
-      data.append("userId", result.userId);
-      const response = await fetch("/api/profile/avatar", {
-        method: "POST",
-        body: data,
+    try {
+      const result = await createManagedUser({
+        ...form,
+        last_name: form.last_name || null,
+        phone: form.phone || null,
       });
 
-      if (!response.ok) {
-        setSaving(false);
-        setError("User was created, but profile photo upload failed.");
+      if (!result.success) {
+        setError(result.error);
         return;
       }
-    }
 
-    router.push("/home/users");
-    router.refresh();
+      if (avatar && result.userId) {
+        const data = new FormData();
+        data.append("file", avatar);
+        data.append("userId", result.userId);
+        const response = await fetch("/api/profile/avatar", { method: "POST", body: data });
+
+        if (!response.ok) {
+          setError("User was created, but profile photo upload failed.");
+          return;
+        }
+      }
+
+      router.push("/home/users");
+      router.refresh();
+    } catch (caught) {
+      setError(getNetworkErrorMessage(caught, "Could not create the user."));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -83,7 +85,8 @@ export function AddUserForm({ roles }: { roles: Role[] }) {
         </label>
         <label className="space-y-2 text-sm font-medium">
           Temporary password
-          <input type="password" minLength={8} className={input} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
+          <input type="password" minLength={12} maxLength={128} className={input} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required />
+          <p className="mt-1 text-xs text-muted-foreground">At least 12 characters with a letter and a number. The user must change it after first login.</p>
         </label>
         <label className="space-y-2 text-sm font-medium">
           Phone

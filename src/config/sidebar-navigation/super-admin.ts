@@ -148,14 +148,14 @@ export const superAdminNavigation: SidebarItem[] = [
     children: [
       {
         title: "All Activities",
-        href: "/dashboard/packages",
+        href: "/home/activities",
         icon: "list",
         permission: "activities.view",
       },
 
       {
-        title: "Create an Activity",
-        href: "/dashboard/packages/create",
+        title: "Create Activity",
+        href: "/home/activities/create",
         icon: "plus",
         permission: "activities.create",
       },

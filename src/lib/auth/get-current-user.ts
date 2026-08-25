@@ -22,7 +22,7 @@ export async function getCurrentUser(){
         error:profileError
     }= await supabase
             .from("profiles")
-            .select(`id,first_name,last_name,avatar_url,phone,status,role:roles(id,name,slug),role_id`)
+            .select(`id,first_name,last_name,avatar_url,phone,status,must_change_password,role:roles(id,name,slug),role_id`)
             .eq("id",user.id)
             .single();
 
@@ -42,6 +42,7 @@ export async function getCurrentUser(){
         phone:profile.phone,
         role:profile.role,
         roleId: profile.role_id,
+        mustChangePassword: profile.must_change_password,
     }
 
 

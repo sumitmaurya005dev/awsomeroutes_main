@@ -23,14 +23,15 @@ function extensionFor(file: File) {
 
 async function deleteImageKitFile(fileId: string) {
   const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
-  if (!privateKey) return;
+  if (!privateKey) return false;
 
-  await fetch(`https://api.imagekit.io/v1/files/${encodeURIComponent(fileId)}`, {
+  const response = await fetch(`https://api.imagekit.io/v1/files/${encodeURIComponent(fileId)}`, {
     method: "DELETE",
     headers: {
       Authorization: `Basic ${Buffer.from(`${privateKey}:`).toString("base64")}`,
     },
   });
+  return response.ok || response.status === 404;
 }
 
 export async function POST(request: NextRequest) {
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
       folder: PROFILE_FOLDER,
       alt_text: `${targetUserId} profile photo`,
       tags: ["profile-avatar"],
+      is_public: false,
       uploaded_by: targetUserId,
     }).select("id").single();
     if (assetError || !asset) {
@@ -111,8 +113,13 @@ export async function POST(request: NextRequest) {
     if (targetProfile.avatar_url) {
       const { data: oldAsset } = await admin.from("media_assets").select("id,imagekit_file_id").eq("uploaded_by", targetUserId).eq("folder", PROFILE_FOLDER).eq("original_url", targetProfile.avatar_url).maybeSingle();
       if (oldAsset) {
-        await deleteImageKitFile(oldAsset.imagekit_file_id);
-        await admin.from("media_assets").delete().eq("id", oldAsset.id);
+        const remoteDeleted = await deleteImageKitFile(oldAsset.imagekit_file_id);
+        if (remoteDeleted) {
+          const { error: oldAssetDeleteError } = await admin.from("media_assets").delete().eq("id", oldAsset.id);
+          if (oldAssetDeleteError) console.error("Old avatar database cleanup failed:", oldAssetDeleteError.message);
+        } else {
+          console.error("Old avatar remains tracked because ImageKit deletion failed.");
+        }
       }
     }
 

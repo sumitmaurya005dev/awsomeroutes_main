@@ -1,36 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Awesome Routes Admin Portal
 
-## Getting Started
+Internal, role-based portal for managing Awesome Routes travel content. It includes authentication, RBAC administration, media management, countries, regions, destinations, locations, and Activity catalogue/pricing.
 
-First, run the development server:
+## Local setup
+
+1. Copy `.env.example` to `.env.local` and replace every placeholder.
+2. Install dependencies with `npm ci`.
+3. Link Supabase, preview migrations, apply them, and regenerate types:
+
+   ```bash
+   npx supabase login
+   npx supabase link --project-ref yxmrthncsimieyoaakai
+   npx supabase db push --dry-run --include-all
+   npx supabase db push --include-all
+   npx supabase gen types typescript --linked --schema public > src/types/database.types.ts
+   ```
+
+4. Run `npm run dev`.
+
+Never commit `.env.local`, a Supabase secret/service-role key, or the ImageKit private key.
+
+## Quality gate
+
+Before merging, run:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run verify
+npm audit --omit=dev
+git diff --check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Database migrations are part of the application contract. Do not deploy code that uses a new RPC before its migration succeeds.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Security model
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- UI visibility is only a convenience; server actions, API routes, and Supabase RLS enforce authorization.
+- Super Admin receives every permission; other roles use explicit `role_permissions` mappings.
+- Profile avatars are private and excluded from the shared Media Library.
+- Generic browser-to-ImageKit authentication is disabled; uploads pass through an authorized server route.
+- Inactive users and temporary-password users are restricted by identity checks and the proxy.
+- Admin pages emit no-index metadata and security headers.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Follow [the deployment checklist](docs/deployment-checklist.md) for production releases.

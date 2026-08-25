@@ -115,6 +115,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 import { ChevronsUpDown, LogOut, User } from "lucide-react";
 import { logoutAction } from "@/actions/auth/logout";
@@ -154,6 +155,7 @@ interface AppSidebarFooterProps {
 export default function AppSidebarFooter({
   user,
 }: AppSidebarFooterProps) {
+  const router = useRouter();
   const initials =
     `${user.firstName?.charAt(0) ?? ""}${user.lastName?.charAt(0) ?? ""}`
       .toUpperCase() || "U";
@@ -277,7 +279,7 @@ export default function AppSidebarFooter({
             "
           >
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => { window.location.href = "/home/profile"; }}>
+              <DropdownMenuItem onClick={() => router.push("/home/profile")}>
                 <User className="mr-2 h-4 w-4" />
                 My Profile
               </DropdownMenuItem>

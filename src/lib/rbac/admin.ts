@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getCurrentUser, getUserPermissions, requirePermission } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const userSchema = z.object({ first_name: z.string().trim().min(1).max(100), last_name: z.string().trim().max(100).optional().nullable(), email: z.string().trim().email(), password: z.string().min(8).max(128), phone: z.string().trim().max(30).optional().nullable(), role_id: z.string().uuid(), status: z.enum(["active", "inactive"]) });
+const userSchema = z.object({ first_name: z.string().trim().min(1).max(100), last_name: z.string().trim().max(100).optional().nullable(), email: z.string().trim().email(), password: z.string().min(12).max(128).regex(/[A-Za-z]/, "Password must contain a letter.").regex(/[0-9]/, "Password must contain a number."), phone: z.string().trim().max(30).optional().nullable(), role_id: z.string().uuid(), status: z.enum(["active", "inactive"]) });
 const profileSchema = userSchema.omit({ email: true, password: true });
 const roleSchema = z.object({
   name: z.string().trim().min(2).max(100),
@@ -44,20 +44,45 @@ async function canAssignRole(roleId: string) {
   return allowedByRole.get(roleId) ?? true;
 }
 
-export async function getUsersData() {
-  await requirePermission("users.view"); const admin = createAdminClient();
-  const [profiles, roles, authUsers, assignable] = await Promise.all([
-    admin.from("profiles").select("id,first_name,last_name,avatar_url,phone,status,role_id,created_at,role:roles(id,name,slug)").order("created_at", { ascending: false }),
+export async function getUsersData({
+  page = 1,
+  search = "",
+  status = "all",
+  sort = "name:asc",
+}: {
+  page?: number;
+  search?: string;
+  status?: "all" | "active" | "inactive";
+  sort?: "name:asc" | "name:desc";
+} = {}) {
+  await requirePermission("users.view");
+  const admin = createAdminClient();
+  const limit = 50;
+  const safePage = Math.max(1, Math.floor(page));
+  const safeSearch = search.trim().replace(/[,%()]/g, " ").slice(0, 100);
+  let profileQuery = admin
+    .from("profiles")
+    .select("id,first_name,last_name,email,avatar_url,phone,status,role_id,created_at,role:roles(id,name,slug)", { count: "exact" });
+  if (safeSearch) {
+    profileQuery = profileQuery.or(`first_name.ilike.%${safeSearch}%,last_name.ilike.%${safeSearch}%,email.ilike.%${safeSearch}%`);
+  }
+  if (status !== "all") profileQuery = profileQuery.eq("status", status);
+  profileQuery = profileQuery
+    .order("first_name", { ascending: sort !== "name:desc", nullsFirst: false })
+    .range((safePage - 1) * limit, safePage * limit - 1);
+  const [profiles, roles, assignable] = await Promise.all([
+    profileQuery,
     admin.from("roles").select("*").order("name"),
-    admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     getAssignableRoleIds(),
   ]);
   for (const result of [profiles, roles]) if (result.error) throw new Error(result.error.message);
-  if (authUsers.error) throw new Error(authUsers.error.message);
-  const emailById = new Map(authUsers.data.users.map((user) => [user.id, user.email ?? null]));
   return {
-    profiles: (profiles.data ?? []).map((profile) => ({ ...profile, email: emailById.get(profile.id) ?? null })),
+    profiles: profiles.data ?? [],
     roles: (roles.data ?? []).filter((role) => assignable.allowedByRole.get(role.id) ?? true),
+    count: profiles.count ?? 0,
+    page: safePage,
+    limit,
+    totalPages: Math.max(1, Math.ceil((profiles.count ?? 0) / limit)),
   };
 }
 
@@ -135,7 +160,7 @@ export async function createManagedUser(input: z.infer<typeof userSchema>) {
   const { data: role } = await admin.from("roles").select("id").eq("id", parsed.data.role_id).maybeSingle(); if (!role) return { success: false as const, error: "Selected role does not exist." };
   const { data, error } = await admin.auth.admin.createUser({ email: parsed.data.email, password: parsed.data.password, email_confirm: true });
   if (error || !data.user) return { success: false as const, error: error?.message ?? "Failed to create Auth user." };
-  const { error: profileError } = await admin.from("profiles").upsert({ id: data.user.id, first_name: parsed.data.first_name, last_name: parsed.data.last_name || null, phone: parsed.data.phone || null, role_id: parsed.data.role_id, status: parsed.data.status });
+  const { error: profileError } = await admin.from("profiles").upsert({ id: data.user.id, email: parsed.data.email, first_name: parsed.data.first_name, last_name: parsed.data.last_name || null, phone: parsed.data.phone || null, role_id: parsed.data.role_id, status: parsed.data.status, must_change_password: true });
   if (profileError) { await admin.auth.admin.deleteUser(data.user.id); return { success: false as const, error: profileError.message }; }
   return { success: true as const, userId: data.user.id };
 }
@@ -166,6 +191,8 @@ export async function updateManagedUser(id: string, input: z.infer<typeof profil
 
 export async function saveRole(id: string | null, input: z.infer<typeof roleSchema>) {
   await requirePermission(id ? "roles.update" : "roles.create"); const parsed = roleSchema.safeParse(input); if (!parsed.success) return { success: false as const, error: parsed.error.issues[0]?.message ?? "Invalid role data." }; const admin = createAdminClient();
+  const actor = await getCurrentUser();
+  if (!actor) return { success: false as const, error: "Unauthorized." };
   const existingRole = id
     ? await admin.from("roles").select("slug").eq("id", id).maybeSingle()
     : null;
@@ -193,25 +220,20 @@ export async function saveRole(id: string | null, input: z.infer<typeof roleSche
       return { success: false as const, error: "You cannot grant permissions that you do not have." };
     }
   }
-  const payload = { name: parsed.data.name, slug: parsed.data.slug, description: parsed.data.description || null }; const result = id ? await admin.from("roles").update(payload).eq("id", id).select("id").single() : await admin.from("roles").insert(payload).select("id").single();
-  if (result.error || !result.data) return { success: false as const, error: result.error?.message ?? "Failed to save role." }; const roleId = result.data.id;
-  const previousMappings = id
-    ? await admin.from("role_permissions").select("permission_id").eq("role_id", roleId)
-    : { data: [], error: null };
-  if (previousMappings.error) return { success: false as const, error: previousMappings.error.message };
-  const { error: clearError } = await admin.from("role_permissions").delete().eq("role_id", roleId); if (clearError) return { success: false as const, error: clearError.message };
-  if (permissionIds.length) {
-    const { error } = await admin.from("role_permissions").insert(permissionIds.map((permission_id) => ({ role_id: roleId, permission_id })));
-    if (error) {
-      if (id && previousMappings.data?.length) {
-        await admin.from("role_permissions").insert(previousMappings.data.map((mapping) => ({ role_id: roleId, permission_id: mapping.permission_id })));
-      } else if (!id) {
-        await admin.from("roles").delete().eq("id", roleId);
-      }
-      return { success: false as const, error: error.message };
-    }
-  }
-  return { success: true as const };
+  // PostgreSQL accepts NULL for these RPC parameters. Supabase's generated
+  // TypeScript Args currently omit SQL parameter nullability, so the casts are
+  // limited to this PostgREST boundary and do not change the runtime values.
+  const { error } = await admin.rpc("save_role_with_permissions", {
+    p_role_id: id as string,
+    p_name: parsed.data.name,
+    p_slug: parsed.data.slug,
+    p_description: (parsed.data.description || null) as string,
+    p_permission_ids: permissionIds,
+    p_actor_id: actor.id,
+  });
+  return error
+    ? { success: false as const, error: error.message }
+    : { success: true as const };
 }
 
 export async function savePermission(id: string | null, input: z.infer<typeof permissionSchema>) {
@@ -219,43 +241,18 @@ export async function savePermission(id: string | null, input: z.infer<typeof pe
   const parsed = permissionSchema.safeParse(input);
   if (!parsed.success) return { success: false as const, error: parsed.error.issues[0]?.message ?? "Invalid permission data." };
   const admin = createAdminClient();
-  const payload = { ...parsed.data, description: parsed.data.description || null };
-  if (id) {
-    const existing = await admin
-      .from("permissions")
-      .select("module,action,permission_key")
-      .eq("id", id)
-      .maybeSingle();
-    if (existing.error || !existing.data) {
-      return { success: false as const, error: existing.error?.message ?? "Permission was not found." };
-    }
-    if (
-      existing.data.module !== parsed.data.module ||
-      existing.data.action !== parsed.data.action ||
-      existing.data.permission_key !== parsed.data.permission_key
-    ) {
-      return {
-        success: false as const,
-        error: "Permission module, action, and key are immutable. Create a new permission instead.",
-      };
-    }
-    const { error } = await admin
-      .from("permissions")
-      .update({ description: payload.description })
-      .eq("id", id);
-    return error ? { success: false as const, error: error.message } : { success: true as const };
-  }
-  const created = await admin.from("permissions").insert(payload).select("id").single();
-  if (created.error || !created.data) return { success: false as const, error: created.error?.message ?? "Failed to create permission." };
-  const superAdmin = await admin.from("roles").select("id").eq("slug", "super_admin").maybeSingle();
-  if (superAdmin.error || !superAdmin.data) {
-    await admin.from("permissions").delete().eq("id", created.data.id);
-    return { success: false as const, error: superAdmin.error?.message ?? "Super Admin role was not found." };
-  }
-  const mapping = await admin.from("role_permissions").insert({ role_id: superAdmin.data.id, permission_id: created.data.id });
-  if (mapping.error) {
-    await admin.from("permissions").delete().eq("id", created.data.id);
-    return { success: false as const, error: mapping.error.message };
-  }
-  return { success: true as const };
+  const actor = await getCurrentUser();
+  if (!actor) return { success: false as const, error: "Unauthorized." };
+  // See the nullable RPC parameter note in saveRole above.
+  const { error } = await admin.rpc("save_permission_definition", {
+    p_permission_id: id as string,
+    p_module: parsed.data.module,
+    p_action: parsed.data.action,
+    p_permission_key: parsed.data.permission_key,
+    p_description: (parsed.data.description || null) as string,
+    p_actor_id: actor.id,
+  });
+  return error
+    ? { success: false as const, error: error.message }
+    : { success: true as const };
 }

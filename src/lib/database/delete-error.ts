@@ -14,6 +14,10 @@ const dependencyMessages: Record<string, string> = {
     "This destination cannot be deleted because one or more locations are linked to it. Reassign or delete those locations first, or mark the destination inactive.",
   locations_parent_location_id_fkey:
     "This location cannot be deleted because one or more child locations are linked to it. Reassign or delete those child locations first, or mark the location inactive.",
+  activity_offerings_location_id_fkey:
+    "This location cannot be deleted because one or more activity offerings use it. Reassign or remove those offerings first, or mark the location inactive.",
+  activity_media_media_asset_id_fkey:
+    "This media asset cannot be deleted because it is used in an activity gallery. Remove it from the activity first.",
 };
 
 export function getDeleteDependencyMessage(

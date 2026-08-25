@@ -8,11 +8,8 @@ export async function proxy(request: NextRequest) {
 
   // ========= PUBLIC ROUTES =========
   // These routes will only be accessable without login
-  const publicRoutes = [
-    "/",                  // Login
-    "/forgot-password", // not yet implemented
-    "/reset-password", // not yet implemented
-  ];
+  const publicRoutes = ["/", "/api/health"];
+  const isLoginRoute = pathname === "/";
 
   const isPublicRoute = publicRoutes.some((route) => {
     return pathname === route || pathname.startsWith(route + "/");
@@ -29,7 +26,7 @@ export async function proxy(request: NextRequest) {
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("status")
+      .select("status,must_change_password")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -57,11 +54,21 @@ export async function proxy(request: NextRequest) {
 
       return loginResponse;
     }
+
+    const isPasswordChangeRoute = pathname === "/home/profile" || pathname.startsWith("/api/profile/");
+    if (profile.must_change_password && !isPasswordChangeRoute) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "You must change your temporary password before continuing." }, { status: 403 });
+      }
+      const passwordResponse = NextResponse.redirect(new URL("/home/profile?passwordChange=required", request.url));
+      response.cookies.getAll().forEach((cookie) => passwordResponse.cookies.set(cookie));
+      return passwordResponse;
+    }
   }
 
   // ========= ALREADY LOGGED IN =========
 
-  if (user && isPublicRoute) {
+  if (user && isLoginRoute) {
     return NextResponse.redirect(new URL("/home", request.url));
   }
 

@@ -7,8 +7,10 @@ import { ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MediaPickerDialog } from "@/components/media/media-picker-dialog";
 import { MEDIA_FOLDERS } from "@/lib/imagekit/upload-client";
+import { useRouter } from "next/navigation";
 
 export function AddCountryForm() {
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [mediaPickerOpen, setMediaPickerOpen] = React.useState(false);
@@ -65,7 +67,8 @@ export function AddCountryForm() {
        * 2. getCountries() fetches fresh data
        * 3. newly created country appears immediately
        */
-      window.location.href = "/home/countries";
+      router.push("/home/countries");
+      router.refresh();
     } catch (error) {
       console.error("Create country form error:", error);
 
@@ -226,7 +229,7 @@ export function AddCountryForm() {
         <button
           type="button"
           onClick={() => {
-            window.location.href = "/home/countries";
+            router.push("/home/countries");
           }}
           disabled={isSubmitting}
           className="inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"

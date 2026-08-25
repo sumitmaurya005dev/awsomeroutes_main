@@ -8,10 +8,12 @@ import { createRegionAction } from "@/actions/regions/actions";
 import { MediaPickerDialog } from "@/components/media/media-picker-dialog";
 import { Button } from "@/components/ui/button";
 import { MEDIA_FOLDERS } from "@/lib/imagekit/upload-client";
+import { useRouter } from "next/navigation";
 
 type CountryOption = { id: string; name: string };
 
 export function AddRegionForm({ countries }: { countries: CountryOption[] }) {
+  const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -46,7 +48,8 @@ export function AddRegionForm({ countries }: { countries: CountryOption[] }) {
       setError(result.error ?? "Failed to create region.");
       return;
     }
-    window.location.href = "/home/regions";
+    router.push("/home/regions");
+    router.refresh();
   };
 
   return (
@@ -172,7 +175,7 @@ export function AddRegionForm({ countries }: { countries: CountryOption[] }) {
             variant="outline"
             disabled={saving}
             onClick={() => {
-              window.location.href = "/home/regions";
+              router.push("/home/regions");
             }}
           >
             Cancel

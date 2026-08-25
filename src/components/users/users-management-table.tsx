@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { updateManagedUser } from "@/lib/rbac/admin";
+import { getNetworkErrorMessage } from "@/lib/client/network-error";
 
 type Role = { id: string; name: string; slug: string };
 
@@ -44,17 +45,27 @@ export function UsersManagementTable({
   roles,
   canUpdate,
   canEditIdentity,
+  page,
+  count,
+  limit,
+  totalPages,
+  initialSearch,
+  initialStatus,
+  initialSort,
 }: {
   users: User[];
   roles: Role[];
   canUpdate: boolean;
   canEditIdentity: boolean;
+  page: number;
+  count: number;
+  limit: number;
+  totalPages: number;
+  initialSearch: string;
+  initialStatus: "all" | "active" | "inactive";
+  initialSort: "name:asc" | "name:desc";
 }) {
   const router = useRouter();
-  const [search, setSearch] = React.useState("");
-  const [status, setStatus] = React.useState("all");
-  const [sort, setSort] = React.useState("name:asc");
-  const [page, setPage] = React.useState(1);
   const [selectedUser, setSelectedUser] = React.useState<User | null>(null);
   const [avatar, setAvatar] = React.useState<File | null>(null);
   const [saving, setSaving] = React.useState(false);
@@ -66,25 +77,6 @@ export function UsersManagementTable({
     role_id: "",
     status: "active",
   });
-
-  const limit = 50;
-  const rows = users
-    .filter(
-      (user) =>
-        `${user.first_name ?? ""} ${user.last_name ?? ""} ${user.email ?? ""} ${user.role?.name ?? ""}`
-          .toLowerCase()
-          .includes(search.toLowerCase()) &&
-        (status === "all" || user.status === status),
-    )
-    .sort((a, b) => {
-      const left = `${a.first_name ?? ""} ${a.last_name ?? ""}`;
-      const right = `${b.first_name ?? ""} ${b.last_name ?? ""}`;
-      return sort === "name:desc"
-        ? right.localeCompare(left)
-        : left.localeCompare(right);
-    });
-  const totalPages = Math.max(1, Math.ceil(rows.length / limit));
-  const visible = rows.slice((page - 1) * limit, page * limit);
 
   function openEditor(user: User) {
     setSelectedUser(user);
@@ -105,7 +97,8 @@ export function UsersManagementTable({
     setSaving(true);
     setError(null);
 
-    const result = await updateManagedUser(selectedUser.id, {
+    try {
+      const result = await updateManagedUser(selectedUser.id, {
       first_name: form.first_name,
       last_name: form.last_name || null,
       phone: form.phone || null,
@@ -113,13 +106,12 @@ export function UsersManagementTable({
       status: form.status,
     });
 
-    if (!result.success) {
-      setSaving(false);
-      setError(result.error);
-      return;
-    }
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
 
-    if (avatar) {
+      if (avatar) {
       const body = new FormData();
       body.append("file", avatar);
       body.append("userId", selectedUser.id);
@@ -135,15 +127,18 @@ export function UsersManagementTable({
             message = (JSON.parse(responseBody) as { error?: string }).error ?? message;
           } catch {}
         }
-        setSaving(false);
         setError(`User details were updated, but ${message}`);
         return;
       }
-    }
+      }
 
-    setSaving(false);
-    setSelectedUser(null);
-    router.refresh();
+      setSelectedUser(null);
+      router.refresh();
+    } catch (caught) {
+      setError(getNetworkErrorMessage(caught, "Could not update the user."));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -153,18 +148,19 @@ export function UsersManagementTable({
           <h2 className="font-semibold">All Users</h2>
           <p className="text-sm text-muted-foreground">View and manage all portal users in the system.</p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search users..." className="h-10 rounded-lg border bg-background px-3 text-sm" />
-          <select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }} className="h-10 rounded-lg border bg-background px-3 text-sm">
+        <form method="get" className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_170px_150px_auto]">
+          <input name="search" defaultValue={initialSearch} placeholder="Search users..." className="h-10 rounded-lg border bg-background px-3 text-sm" />
+          <select name="sort" defaultValue={initialSort} className="h-10 rounded-lg border bg-background px-3 text-sm">
             <option value="name:asc">Name: A → Z</option>
             <option value="name:desc">Name: Z → A</option>
           </select>
-          <select value={status} onChange={(event) => { setStatus(event.target.value); setPage(1); }} className="h-10 rounded-lg border bg-background px-3 text-sm">
+          <select name="status" defaultValue={initialStatus} className="h-10 rounded-lg border bg-background px-3 text-sm">
             <option value="all">All status</option>
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
-        </div>
+          <button type="submit" className="h-10 rounded-lg border bg-background px-4 text-sm font-medium hover:bg-muted">Apply</button>
+        </form>
       </div>
 
       <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
@@ -172,7 +168,7 @@ export function UsersManagementTable({
           <table className="w-full min-w-[850px] text-sm">
             <thead className="border-b bg-muted/40"><tr><th className="px-5 py-4 text-left">User</th><th className="px-5 py-4 text-left">Role</th><th className="px-5 py-4 text-left">Status</th><th className="px-5 py-4 text-left">Created</th><th className="px-5 py-4 text-right">Actions</th></tr></thead>
             <tbody className="divide-y">
-              {visible.length ? visible.map((user) => {
+              {users.length ? users.map((user) => {
                 const initials = `${user.first_name?.[0] ?? ""}${user.last_name?.[0] ?? ""}`.toUpperCase() || "U";
                 return (
                   <tr key={user.id}>
@@ -188,7 +184,7 @@ export function UsersManagementTable({
           </table>
         </div>
       </div>
-      <DataPagination page={page} totalPages={totalPages} count={rows.length} limit={limit} />
+      <DataPagination page={page} totalPages={totalPages} count={count} limit={limit} />
 
       <Dialog open={Boolean(selectedUser)} onOpenChange={(open) => { if (!open && !saving) setSelectedUser(null); }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">

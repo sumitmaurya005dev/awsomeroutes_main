@@ -26,6 +26,7 @@ type MediaPickerDialogProps = {
   fileNamePrefix: string;
   altText?: string;
   onSelect: (asset: PickerAsset) => void;
+  canUpload?: boolean;
 };
 
 const ALL_FOLDERS = "__all__";
@@ -37,6 +38,7 @@ export function MediaPickerDialog({
   fileNamePrefix,
   altText,
   onSelect,
+  canUpload = true,
 }: MediaPickerDialogProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [assets, setAssets] = React.useState<PickerAsset[]>([]);
@@ -118,10 +120,10 @@ export function MediaPickerDialog({
             <option value={ALL_FOLDERS}>All folders</option>
             {Object.values(MEDIA_FOLDERS).map((item) => <option key={item} value={item}>{item.replace("/awesomeroutes/", "")}</option>)}
           </select>
-          <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          {canUpload && <Button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
             {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
             Upload new
-          </Button>
+          </Button>}
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleUpload} />
         </div>
 
