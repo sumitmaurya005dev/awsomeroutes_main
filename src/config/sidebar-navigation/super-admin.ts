@@ -190,17 +190,10 @@ export const superAdminNavigation: SidebarItem[] = [
 
     children: [
       {
-        title: "All a Vehicle",
-        href: "/dashboard/packages",
+        title: "Vehicle Management",
+        href: "/home/vehicles",
         icon: "list",
         permission: "vehicles.view",
-      },
-
-      {
-        title: "Add a Hotel",
-        href: "/dashboard/packages/create",
-        icon: "plus",
-        permission: "vehicles.create",
       },
     ],
   },
