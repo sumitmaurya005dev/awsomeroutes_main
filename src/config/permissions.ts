@@ -54,6 +54,8 @@ export const PERMISSIONS = {
     CREATE: "hotels.create",
     UPDATE: "hotels.update",
     DELETE: "hotels.delete",
+    MANAGE_PRICING: "hotels.manage_pricing",
+    OVERRIDE_PRICE: "hotels.override_price",
   },
 
   VEHICLES: {

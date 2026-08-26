@@ -1,6 +1,5 @@
 import type { SidebarItem } from "@/types/sidebar-navigation";
 
-
 export const superAdminNavigation: SidebarItem[] = [
   {
     title: "Dashboard",
@@ -9,7 +8,7 @@ export const superAdminNavigation: SidebarItem[] = [
     permission: "dashboard.view",
   },
 
-    // Later implementation
+  // Later implementation
   //  {
   //   title: "Bookings",
   //   icon: "clipboard",
@@ -53,7 +52,7 @@ export const superAdminNavigation: SidebarItem[] = [
       },
     ],
   },
-   {
+  {
     title: "Countries",
     icon: "globe",
     permission: "countries.view",
@@ -140,7 +139,7 @@ export const superAdminNavigation: SidebarItem[] = [
     ],
   },
 
-   {
+  {
     title: "Activities",
     icon: "activity",
     permission: "activities.view",
@@ -162,8 +161,7 @@ export const superAdminNavigation: SidebarItem[] = [
     ],
   },
 
-
-   {
+  {
     title: "Hotels",
     icon: "hotel",
     permission: "hotels.view",
@@ -171,14 +169,14 @@ export const superAdminNavigation: SidebarItem[] = [
     children: [
       {
         title: "All Hotels",
-        href: "/dashboard/packages",
+        href: "/home/hotels",
         icon: "list",
         permission: "hotels.view",
       },
 
       {
         title: "Add a Hotel",
-        href: "/dashboard/packages/create",
+        href: "/home/hotels/create",
         icon: "plus",
         permission: "hotels.create",
       },
@@ -205,74 +203,70 @@ export const superAdminNavigation: SidebarItem[] = [
         permission: "vehicles.create",
       },
     ],
-
   },
 
   {
-  title: "User Management",
-  icon: "users",
-  permission: "users.view",
+    title: "User Management",
+    icon: "users",
+    permission: "users.view",
 
-  children: [
-    {
-      title: "All Users",
-      href: "/home/users",
-      icon: "list",
-      permission: "users.view",
-    },
+    children: [
+      {
+        title: "All Users",
+        href: "/home/users",
+        icon: "list",
+        permission: "users.view",
+      },
 
-    {
-      title: "Create User",
-      href: "/home/users/create",
-      icon: "plus",
-      permission: "users.create",
-    },
-  ],
-},
+      {
+        title: "Create User",
+        href: "/home/users/create",
+        icon: "plus",
+        permission: "users.create",
+      },
+    ],
+  },
 
-{
-  title: "Role Management",
-  icon: "shield",
-  permission: "roles.view",
+  {
+    title: "Role Management",
+    icon: "shield",
+    permission: "roles.view",
 
-  children: [
-    {
-      title: "All Roles",
-      href: "/home/roles",
-      icon: "list",
-      permission: "roles.view",
-    },
+    children: [
+      {
+        title: "All Roles",
+        href: "/home/roles",
+        icon: "list",
+        permission: "roles.view",
+      },
 
-    {
-      title: "Create Role",
-      href: "/home/roles/create",
-      icon: "plus",
-      permission: "roles.create",
-    },
-  ],
-},
+      {
+        title: "Create Role",
+        href: "/home/roles/create",
+        icon: "plus",
+        permission: "roles.create",
+      },
+    ],
+  },
 
-{
-  title: "Permission Management",
-  icon: "key",
-  permission: "permissions.view",
+  {
+    title: "Permission Management",
+    icon: "key",
+    permission: "permissions.view",
 
-  children: [
-    {
-      title: "Permission Matrix",
-      href: "/home/permissions",
-      icon: "list",
-      permission: "permissions.view",
-    },
-    {
-      title: "Create Permission",
-      href: "/home/permissions/create",
-      icon: "plus",
-      permission: "permissions.create",
-    },
-  ],
-},
- 
+    children: [
+      {
+        title: "Permission Matrix",
+        href: "/home/permissions",
+        icon: "list",
+        permission: "permissions.view",
+      },
+      {
+        title: "Create Permission",
+        href: "/home/permissions/create",
+        icon: "plus",
+        permission: "permissions.create",
+      },
+    ],
+  },
 ];
-
-

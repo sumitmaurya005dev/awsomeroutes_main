@@ -1,13 +1,31 @@
 import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 
-import { isMediaLibraryFolder } from "@/config/media";
+import { MEDIA_FOLDERS, isMediaLibraryFolder } from "@/config/media";
+import type { PermissionKey } from "@/config/permissions";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
+import { detectImageMime } from "@/lib/media/file-validation";
 import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const MAX_REQUEST_SIZE = MAX_FILE_SIZE + 1024 * 1024;
 const MAX_UPLOADS_PER_HOUR = 30;
+const MAX_IMAGE_PIXELS = 40_000_000;
+const IMAGEKIT_TIMEOUT_MS = 30_000;
+
+const FOLDER_PERMISSIONS: Record<string, readonly PermissionKey[]> = {
+  [MEDIA_FOLDERS.COUNTRIES]: ["countries.create", "countries.update"],
+  [MEDIA_FOLDERS.REGIONS]: ["regions.create", "regions.update"],
+  [MEDIA_FOLDERS.DESTINATIONS]: [
+    "destinations.create",
+    "destinations.update",
+  ],
+  [MEDIA_FOLDERS.LOCATIONS]: ["locations.create", "locations.update"],
+  [MEDIA_FOLDERS.HOTELS]: ["hotels.create", "hotels.update"],
+  [MEDIA_FOLDERS.ACTIVITIES]: ["activities.create", "activities.update"],
+  [MEDIA_FOLDERS.PACKAGES]: ["packages.create", "packages.update"],
+};
 
 type ImageKitUpload = {
   fileId?: string;
@@ -44,6 +62,17 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     if (!canUpload) return NextResponse.json({ error: "You are not allowed to upload media." }, { status: 403 });
 
+    const declaredRequestSize = Number(request.headers.get("content-length"));
+    if (
+      Number.isFinite(declaredRequestSize) &&
+      declaredRequestSize > MAX_REQUEST_SIZE
+    ) {
+      return NextResponse.json(
+        { error: "Upload request is too large." },
+        { status: 413 },
+      );
+    }
+
     const body = await request.formData();
     const file = body.get("file");
     const folder = body.get("folder");
@@ -54,6 +83,26 @@ export async function POST(request: NextRequest) {
     }
     if (typeof folder !== "string" || !isMediaLibraryFolder(folder)) {
       return NextResponse.json({ error: "Invalid Media Library folder." }, { status: 400 });
+    }
+    const folderPermissions = FOLDER_PERMISSIONS[folder] ?? [];
+    const canUseFolder = (
+      await Promise.all(folderPermissions.map((permission) => hasPermission(permission)))
+    ).some(Boolean);
+    if (!canUseFolder) {
+      return NextResponse.json(
+        { error: "You are not allowed to upload media for this module." },
+        { status: 403 },
+      );
+    }
+
+    const detectedMime = detectImageMime(
+      new Uint8Array(await file.slice(0, 12).arrayBuffer()),
+    );
+    if (!detectedMime || detectedMime !== file.type) {
+      return NextResponse.json(
+        { error: "The uploaded file content does not match its image type." },
+        { status: 400 },
+      );
     }
 
     const supabase = await createClient();
@@ -80,14 +129,32 @@ export async function POST(request: NextRequest) {
       method: "POST",
       headers: { Authorization: `Basic ${Buffer.from(`${privateKey}:`).toString("base64")}` },
       body: imageKitForm,
+      signal: AbortSignal.timeout(IMAGEKIT_TIMEOUT_MS),
     });
-    const uploaded = (await uploadResponse.json()) as ImageKitUpload;
+    const uploadBody = await uploadResponse.text();
+    let uploaded: ImageKitUpload = {};
+    try {
+      uploaded = JSON.parse(uploadBody) as ImageKitUpload;
+    } catch {
+      // ImageKit can occasionally return an empty/non-JSON gateway response.
+    }
     if (!uploadResponse.ok || !uploaded.fileId || !uploaded.url || !uploaded.filePath || !uploaded.name) {
       return NextResponse.json({ error: uploaded.message ?? "ImageKit upload failed." }, { status: 502 });
     }
     if (!uploaded.filePath.startsWith(`${folder}/`)) {
       await deleteImageKitFile(uploaded.fileId, privateKey);
       return NextResponse.json({ error: "ImageKit returned an unexpected file path." }, { status: 502 });
+    }
+    if (
+      uploaded.width &&
+      uploaded.height &&
+      uploaded.width * uploaded.height > MAX_IMAGE_PIXELS
+    ) {
+      await deleteImageKitFile(uploaded.fileId, privateKey);
+      return NextResponse.json(
+        { error: "Image dimensions are too large. Use an image below 40 megapixels." },
+        { status: 400 },
+      );
     }
 
     const { data: asset, error: assetError } = await supabase.from("media_assets").insert({
