@@ -63,6 +63,8 @@ export const PERMISSIONS = {
     CREATE: "vehicles.create",
     UPDATE: "vehicles.update",
     DELETE: "vehicles.delete",
+    MANAGE_PRICING: "vehicles.manage_pricing",
+    ASSIGN: "vehicles.assign",
   },
 
   BOOKINGS: {

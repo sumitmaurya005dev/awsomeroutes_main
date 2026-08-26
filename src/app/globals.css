@@ -35,9 +35,9 @@
   --sidebar-accent-foreground: #384b02;
   --sidebar-border: #dbddd5;
   --sidebar-ring: #ace600;
-  --font-sans: Inter, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: JetBrains Mono, monospace;
+  --app-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   --radius: 0.35rem;
   --shadow-x: 0px;
   --shadow-y: 4px;
@@ -90,9 +90,9 @@
   --sidebar-accent-foreground: #d9ff66;
   --sidebar-border: #282a22;
   --sidebar-ring: #bfff00;
-  --font-sans: Inter, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: JetBrains Mono, monospace;
+  --app-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-serif: Georgia, serif;
+  --app-font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   --radius: 0.35rem;
   --shadow-x: 0px;
   --shadow-y: 8px;
@@ -145,9 +145,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --font-serif: var(--app-font-serif);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

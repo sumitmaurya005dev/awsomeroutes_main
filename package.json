@@ -8,10 +8,11 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "npm run test:activity && npm run test:hotel",
+    "test": "npm run test:activity && npm run test:hotel && npm run test:vehicle",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build",
     "test:activity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/activity-pricing.test.mjs",
-    "test:hotel": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/hotel-pricing.test.mjs tests/hotel-security.test.mjs"
+    "test:hotel": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/hotel-pricing.test.mjs tests/hotel-security.test.mjs",
+    "test:vehicle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/vehicle-pricing.test.mjs tests/vehicle-security.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

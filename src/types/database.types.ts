@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -709,6 +709,122 @@ export type Database = {
             columns: ["region_id"]
             isOneToOne: false
             referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drivers: {
+        Row: {
+          alternate_phone: string | null
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string | null
+          licence_expiry: string | null
+          licence_number: string | null
+          notes: string | null
+          phone: string
+          status: string
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          alternate_phone?: string | null
+          created_at?: string
+          first_name: string
+          id?: string
+          last_name?: string | null
+          licence_expiry?: string | null
+          licence_number?: string | null
+          notes?: string | null
+          phone: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          alternate_phone?: string | null
+          created_at?: string
+          first_name?: string
+          id?: string
+          last_name?: string | null
+          licence_expiry?: string | null
+          licence_number?: string | null
+          notes?: string | null
+          phone?: string
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drivers_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fleet_vehicles: {
+        Row: {
+          color: string | null
+          comfort_capacity: number | null
+          created_at: string
+          id: string
+          luggage_capacity: number | null
+          manufacture_year: number | null
+          model_id: string
+          notes: string | null
+          registration_number: string
+          seating_capacity: number | null
+          status: string
+          updated_at: string
+          vendor_id: string | null
+        }
+        Insert: {
+          color?: string | null
+          comfort_capacity?: number | null
+          created_at?: string
+          id?: string
+          luggage_capacity?: number | null
+          manufacture_year?: number | null
+          model_id: string
+          notes?: string | null
+          registration_number: string
+          seating_capacity?: number | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Update: {
+          color?: string | null
+          comfort_capacity?: number | null
+          created_at?: string
+          id?: string
+          luggage_capacity?: number | null
+          manufacture_year?: number | null
+          model_id?: string
+          notes?: string | null
+          registration_number?: string
+          seating_capacity?: number | null
+          status?: string
+          updated_at?: string
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fleet_vehicles_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fleet_vehicles_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -1566,6 +1682,234 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      transport_vendors: {
+        Row: {
+          address: string | null
+          alternate_phone: string | null
+          base_location_id: string
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          alternate_phone?: string | null
+          base_location_id: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          alternate_phone?: string | null
+          base_location_id?: string
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_vendors_base_location_id_fkey"
+            columns: ["base_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_categories: {
+        Row: {
+          created_at: string
+          default_comfort_capacity: number
+          default_luggage_capacity: number
+          default_seating_capacity: number
+          description: string | null
+          id: string
+          name: string
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_comfort_capacity: number
+          default_luggage_capacity?: number
+          default_seating_capacity: number
+          description?: string | null
+          id?: string
+          name: string
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_comfort_capacity?: number
+          default_luggage_capacity?: number
+          default_seating_capacity?: number
+          description?: string | null
+          id?: string
+          name?: string
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      vehicle_models: {
+        Row: {
+          category_id: string
+          comfort_capacity: number
+          created_at: string
+          description: string | null
+          id: string
+          luggage_capacity: number
+          manufacturer: string | null
+          name: string
+          seating_capacity: number
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          comfort_capacity: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          luggage_capacity?: number
+          manufacturer?: string | null
+          name: string
+          seating_capacity: number
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          comfort_capacity?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          luggage_capacity?: number
+          manufacturer?: string | null
+          name?: string
+          seating_capacity?: number
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_models_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicle_rate_cards: {
+        Row: {
+          all_inclusive: boolean
+          base_location_id: string
+          category_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          daily_rate_paise: number
+          id: string
+          model_id: string | null
+          notes: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          all_inclusive?: boolean
+          base_location_id: string
+          category_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          daily_rate_paise: number
+          id?: string
+          model_id?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          all_inclusive?: boolean
+          base_location_id?: string
+          category_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          daily_rate_paise?: number
+          id?: string
+          model_id?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_rate_cards_base_location_id_fkey"
+            columns: ["base_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_rate_cards_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_rate_cards_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicle_rate_cards_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
