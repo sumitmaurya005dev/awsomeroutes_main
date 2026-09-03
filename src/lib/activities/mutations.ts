@@ -42,6 +42,19 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+/**
+ * Package prices are calculated from current activity pricing records rather
+ * than copied into every package. Invalidate package editors after a pricing
+ * mutation so linked packages read the latest rules on their next render.
+ * Booking and quotation snapshots are intentionally not changed here.
+ */
+function revalidateActivityPricingConsumers() {
+  revalidatePath("/home/activities");
+  revalidatePath("/home/activities/[id]/edit", "page");
+  revalidatePath("/home/packages");
+  revalidatePath("/home/packages/[id]/edit", "page");
+}
+
 function activityPayload(values: ActivityFormValues) {
   const { gallery_asset_ids, ...payload } = values;
   void gallery_asset_ids;
@@ -206,7 +219,7 @@ export async function saveOffering(
             "This activity already has an offering for the selected location.",
           )
         : error;
-    revalidatePath(`/home/activities/${parsed.activity_id}/edit`);
+    revalidateActivityPricingConsumers();
     return { success: true, data: { id: String(data.id) } };
   } catch (error) {
     console.error("Save activity offering error:", error);
@@ -233,7 +246,7 @@ export async function deleteOffering(
       .eq("id", id)
       .eq("activity_id", activityId);
     if (error) throw error;
-    revalidatePath(`/home/activities/${activityId}/edit`);
+    revalidateActivityPricingConsumers();
     return { success: true };
   } catch (error) {
     return {
@@ -327,6 +340,7 @@ export async function saveVariant(
       parsed,
       "activities.manage_pricing",
     );
+    revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -355,6 +369,7 @@ export async function saveParticipantPrice(
       parsed,
       "activities.manage_pricing",
     );
+    revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -381,6 +396,7 @@ export async function saveCharge(
       parsed,
       "activities.manage_pricing",
     );
+    revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -406,6 +422,7 @@ export async function saveSlot(
       parsed,
       "activities.manage_pricing",
     );
+    revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -449,7 +466,11 @@ export async function deleteActivityChild(
     const supabase = await createActivityDatabaseClient();
     const { error } = await supabase.from(table).delete().eq("id", id);
     if (error) throw error;
-    revalidatePath(`/home/activities/${activityId}/edit`);
+    if (table === "activity_faqs") {
+      revalidatePath(`/home/activities/${activityId}/edit`);
+    } else {
+      revalidateActivityPricingConsumers();
+    }
     return { success: true };
   } catch (error) {
     return {

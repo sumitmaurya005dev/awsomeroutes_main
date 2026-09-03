@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { locationSchema, type LocationFormValues } from "./validations";
 import { hasPermission } from "@/lib/auth";
@@ -43,11 +45,16 @@ export async function deleteLocation(id: string) {
     return { success: false as const, error: "You do not have permission to delete locations." };
   }
 
+  const parsedId = z.string().uuid().safeParse(id);
+  if (!parsedId.success) {
+    return { success: false as const, error: "Invalid location identifier." };
+  }
+
   const supabase = await createClient();
   const { count, error: dependencyError } = await supabase
     .from("locations")
     .select("id", { count: "exact", head: true })
-    .eq("parent_location_id", id);
+    .eq("parent_location_id", parsedId.data);
 
   if (dependencyError) {
     console.error("Error checking location dependencies:", dependencyError);
@@ -61,11 +68,25 @@ export async function deleteLocation(id: string) {
     };
   }
 
-  const { error } = await supabase.from("locations").delete().eq("id", id);
+  const { data: deleted, error } = await supabase
+    .from("locations")
+    .delete()
+    .eq("id", parsedId.data)
+    .select("id")
+    .maybeSingle();
   if (error) {
     console.error("Error deleting location:", error);
     return { success: false as const, error: getDeleteDependencyMessage(error, "Failed to delete location.") };
   }
 
+  if (!deleted) {
+    return {
+      success: false as const,
+      error:
+        "The location was not deleted. It may already be removed, or the database delete policy did not allow this operation. Refresh the page and verify locations.delete permission for your role.",
+    };
+  }
+
+  revalidatePath("/home/locations");
   return { success: true as const };
 }

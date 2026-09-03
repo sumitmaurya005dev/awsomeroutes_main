@@ -1,4 +1,4 @@
-export type Json =
+﻿export type Json =
   | string
   | number
   | boolean
@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.17"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -1495,6 +1495,767 @@ export type Database = {
           },
         ]
       }
+      package_content_items: {
+        Row: {
+          content: string
+          created_at: string
+          display_order: number
+          id: string
+          is_customized: boolean
+          is_system_generated: boolean
+          item_type: string
+          package_id: string
+          section_title: string
+          source_template_item_id: string | null
+          system_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_customized?: boolean
+          is_system_generated?: boolean
+          item_type: string
+          package_id: string
+          section_title?: string
+          source_template_item_id?: string | null
+          system_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_customized?: boolean
+          is_system_generated?: boolean
+          item_type?: string
+          package_id?: string
+          section_title?: string
+          source_template_item_id?: string | null
+          system_key?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_content_items_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_content_items_source_template_item_id_fkey"
+            columns: ["source_template_item_id"]
+            isOneToOne: false
+            referencedRelation: "package_content_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_content_template_items: {
+        Row: {
+          content: string
+          created_at: string
+          display_order: number
+          id: string
+          section_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          section_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          section_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_content_template_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "package_content_template_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_content_template_sections: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          section_type: string
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          section_type: string
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          section_type?: string
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_content_template_sections_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "package_content_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_content_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_default: boolean
+          name: string
+          notes: string | null
+          slug: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name: string
+          notes?: string | null
+          slug: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_default?: boolean
+          name?: string
+          notes?: string | null
+          slug?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      package_day_activities: {
+        Row: {
+          activity_offering_id: string
+          activity_variant_id: string | null
+          created_at: string
+          display_order: number
+          id: string
+          is_optional: boolean
+          itinerary_day_id: string
+          notes: string | null
+          quantity: number
+        }
+        Insert: {
+          activity_offering_id: string
+          activity_variant_id?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_optional?: boolean
+          itinerary_day_id: string
+          notes?: string | null
+          quantity?: number
+        }
+        Update: {
+          activity_offering_id?: string
+          activity_variant_id?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_optional?: boolean
+          itinerary_day_id?: string
+          notes?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_day_activities_activity_offering_id_fkey"
+            columns: ["activity_offering_id"]
+            isOneToOne: false
+            referencedRelation: "activity_offerings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_day_activities_activity_variant_id_fkey"
+            columns: ["activity_variant_id"]
+            isOneToOne: false
+            referencedRelation: "activity_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_day_activities_itinerary_day_id_fkey"
+            columns: ["itinerary_day_id"]
+            isOneToOne: false
+            referencedRelation: "package_itinerary_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_day_hotels: {
+        Row: {
+          created_at: string
+          display_order: number
+          hotel_category_id: string
+          hotel_id: string
+          hotel_room_id: string | null
+          id: string
+          is_primary: boolean
+          itinerary_day_id: string
+          meal_plan: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          hotel_category_id: string
+          hotel_id: string
+          hotel_room_id?: string | null
+          id?: string
+          is_primary?: boolean
+          itinerary_day_id: string
+          meal_plan?: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          hotel_category_id?: string
+          hotel_id?: string
+          hotel_room_id?: string | null
+          id?: string
+          is_primary?: boolean
+          itinerary_day_id?: string
+          meal_plan?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_day_hotels_hotel_category_id_fkey"
+            columns: ["hotel_category_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_day_hotels_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_day_hotels_hotel_room_id_fkey"
+            columns: ["hotel_room_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_day_hotels_itinerary_day_id_fkey"
+            columns: ["itinerary_day_id"]
+            isOneToOne: false
+            referencedRelation: "package_itinerary_days"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_destinations: {
+        Row: {
+          destination_id: string
+          display_order: number
+          package_id: string
+        }
+        Insert: {
+          destination_id: string
+          display_order?: number
+          package_id: string
+        }
+        Update: {
+          destination_id?: string
+          display_order?: number
+          package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_destinations_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_destinations_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          display_order: number
+          id: string
+          package_id: string
+          question: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          package_id: string
+          question: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          package_id?: string
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_faqs_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_itinerary_days: {
+        Row: {
+          breakfast_included: boolean
+          created_at: string
+          day_number: number
+          description: string | null
+          dinner_included: boolean
+          distance_km: number | null
+          end_location_id: string | null
+          id: string
+          lunch_included: boolean
+          notes: string | null
+          overnight_location_id: string | null
+          package_id: string
+          start_location_id: string | null
+          summary: string | null
+          title: string
+          travel_minutes: number | null
+          updated_at: string
+          vehicle_required: boolean
+        }
+        Insert: {
+          breakfast_included?: boolean
+          created_at?: string
+          day_number: number
+          description?: string | null
+          dinner_included?: boolean
+          distance_km?: number | null
+          end_location_id?: string | null
+          id?: string
+          lunch_included?: boolean
+          notes?: string | null
+          overnight_location_id?: string | null
+          package_id: string
+          start_location_id?: string | null
+          summary?: string | null
+          title: string
+          travel_minutes?: number | null
+          updated_at?: string
+          vehicle_required?: boolean
+        }
+        Update: {
+          breakfast_included?: boolean
+          created_at?: string
+          day_number?: number
+          description?: string | null
+          dinner_included?: boolean
+          distance_km?: number | null
+          end_location_id?: string | null
+          id?: string
+          lunch_included?: boolean
+          notes?: string | null
+          overnight_location_id?: string | null
+          package_id?: string
+          start_location_id?: string | null
+          summary?: string | null
+          title?: string
+          travel_minutes?: number | null
+          updated_at?: string
+          vehicle_required?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_itinerary_days_end_location_id_fkey"
+            columns: ["end_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_itinerary_days_overnight_location_id_fkey"
+            columns: ["overnight_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_itinerary_days_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_itinerary_days_start_location_id_fkey"
+            columns: ["start_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_media: {
+        Row: {
+          caption: string | null
+          created_at: string
+          display_order: number
+          id: string
+          media_asset_id: string
+          package_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          media_asset_id: string
+          package_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          media_asset_id?: string
+          package_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_media_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_media_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_price_adjustments: {
+        Row: {
+          created_at: string
+          fixed_adjustment_paise: number
+          hotel_category_id: string
+          id: string
+          markup_bps: number
+          notes: string | null
+          package_id: string
+          rounding_multiple_paise: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          fixed_adjustment_paise?: number
+          hotel_category_id: string
+          id?: string
+          markup_bps?: number
+          notes?: string | null
+          package_id: string
+          rounding_multiple_paise?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          fixed_adjustment_paise?: number
+          hotel_category_id?: string
+          id?: string
+          markup_bps?: number
+          notes?: string | null
+          package_id?: string
+          rounding_multiple_paise?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_price_adjustments_hotel_category_id_fkey"
+            columns: ["hotel_category_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_price_adjustments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      package_vehicle_options: {
+        Row: {
+          base_location_id: string
+          billable_days: number
+          created_at: string
+          display_order: number
+          id: string
+          maximum_pax: number
+          minimum_pax: number
+          notes: string | null
+          package_id: string
+          quantity: number
+          vehicle_category_id: string
+          vehicle_model_id: string | null
+          vendor_id: string | null
+        }
+        Insert: {
+          base_location_id: string
+          billable_days: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          maximum_pax: number
+          minimum_pax: number
+          notes?: string | null
+          package_id: string
+          quantity?: number
+          vehicle_category_id: string
+          vehicle_model_id?: string | null
+          vendor_id?: string | null
+        }
+        Update: {
+          base_location_id?: string
+          billable_days?: number
+          created_at?: string
+          display_order?: number
+          id?: string
+          maximum_pax?: number
+          minimum_pax?: number
+          notes?: string | null
+          package_id?: string
+          quantity?: number
+          vehicle_category_id?: string
+          vehicle_model_id?: string | null
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_vehicle_options_base_location_id_fkey"
+            columns: ["base_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_vehicle_options_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_vehicle_options_vehicle_category_id_fkey"
+            columns: ["vehicle_category_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_vehicle_options_vehicle_model_id_fkey"
+            columns: ["vehicle_model_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_vehicle_options_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vendors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      packages: {
+        Row: {
+          content_synced_at: string | null
+          content_template_id: string | null
+          content_template_version: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          duration_days: number
+          duration_nights: number
+          end_location_id: string | null
+          featured_image_asset_id: string | null
+          id: string
+          is_featured: boolean
+          name: string
+          package_code: string | null
+          primary_destination_id: string
+          published_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          short_description: string | null
+          slug: string
+          start_location_id: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content_synced_at?: string | null
+          content_template_id?: string | null
+          content_template_version?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_days: number
+          duration_nights: number
+          end_location_id?: string | null
+          featured_image_asset_id?: string | null
+          id?: string
+          is_featured?: boolean
+          name: string
+          package_code?: string | null
+          primary_destination_id: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug: string
+          start_location_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content_synced_at?: string | null
+          content_template_id?: string | null
+          content_template_version?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          duration_days?: number
+          duration_nights?: number
+          end_location_id?: string | null
+          featured_image_asset_id?: string | null
+          id?: string
+          is_featured?: boolean
+          name?: string
+          package_code?: string | null
+          primary_destination_id?: string
+          published_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          short_description?: string | null
+          slug?: string
+          start_location_id?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_content_template_id_fkey"
+            columns: ["content_template_id"]
+            isOneToOne: false
+            referencedRelation: "package_content_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_end_location_id_fkey"
+            columns: ["end_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_featured_image_asset_id_fkey"
+            columns: ["featured_image_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_primary_destination_id_fkey"
+            columns: ["primary_destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "packages_start_location_id_fkey"
+            columns: ["start_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permissions: {
         Row: {
           action: string
@@ -1925,6 +2686,10 @@ export type Database = {
         Args: { required_permission: string }
         Returns: boolean
       }
+      rebuild_package_generated_content: {
+        Args: { p_package_id: string }
+        Returns: undefined
+      }
       record_login_attempt: {
         Args: { p_fingerprint: string; p_succeeded: boolean }
         Returns: undefined
@@ -1950,6 +2715,25 @@ export type Database = {
         }
         Returns: string
       }
+      save_package_core: {
+        Args: {
+          p_destination_ids: string[]
+          p_gallery_asset_ids: string[]
+          p_package: Json
+          p_package_id: string
+        }
+        Returns: string
+      }
+      save_package_core_with_defaults: {
+        Args: {
+          p_apply_content_defaults?: boolean
+          p_destination_ids: string[]
+          p_gallery_asset_ids: string[]
+          p_package: Json
+          p_package_id: string
+        }
+        Returns: string
+      }
       save_permission_definition: {
         Args: {
           p_action: string
@@ -1971,6 +2755,14 @@ export type Database = {
           p_slug: string
         }
         Returns: string
+      }
+      set_default_package_content_template: {
+        Args: { p_template_id: string }
+        Returns: undefined
+      }
+      sync_package_content_defaults: {
+        Args: { p_package_id: string; p_replace?: boolean }
+        Returns: number
       }
     }
     Enums: {

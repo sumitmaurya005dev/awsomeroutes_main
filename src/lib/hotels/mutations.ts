@@ -262,6 +262,10 @@ export async function saveHotelRate(
       throw contextError ?? new Error("Hotel was not found.");
     if (contextHotel.location_id !== parsed.location_id)
       throw new Error("The rate location does not match this hotel.");
+    if (parsed.hotel_id !== hotelContextId)
+      throw new Error(
+        "Location defaults must be managed from Location Pricing. This form only saves hotel or room overrides.",
+      );
 
     let currentScope: { hotel_id: string | null; room_id: string | null } | null =
       null;
@@ -273,6 +277,8 @@ export async function saveHotelRate(
         .maybeSingle();
       if (currentError || !current)
         throw currentError ?? new Error("Rate card was not found.");
+      if (current.hotel_id !== hotelContextId)
+        throw new Error("This override does not belong to the selected hotel.");
       currentScope = current;
     }
     if (requiresHotelRateOverridePermission(currentScope, parsed))
@@ -321,13 +327,95 @@ export async function deleteHotelRate(
       .maybeSingle();
     if (rateError || !rate)
       throw rateError ?? new Error("Rate card was not found.");
-    if (isHotelRateOverride(rate))
-      await requirePermission("hotels.override_price");
-    const { error } = await db.from("hotel_rate_cards").delete().eq("id", id);
+    if (!isHotelRateOverride(rate))
+      throw new Error("Location defaults must be deleted from Location Pricing.");
+    if (rate.hotel_id !== hotelId)
+      throw new Error("This override does not belong to the selected hotel.");
+    await requirePermission("hotels.override_price");
+    const { data: deleted, error } = await db
+      .from("hotel_rate_cards")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
     if (error) throw error;
+    if (!deleted)
+      throw new Error(
+        "The override was not deleted. Verify your hotel pricing permissions.",
+      );
     revalidatePath(`/home/hotels/${hotelId}/edit`);
     return { success: true };
   } catch (e) {
     return { success: false, error: message(e, "Failed to delete rate.") };
+  }
+}
+
+export async function saveHotelLocationRate(
+  id: string | null,
+  values: HotelRateValues,
+): Promise<Result<{ id: string }>> {
+  try {
+    await requirePermission("hotels.manage_pricing");
+    const parsed = hotelRateSchema.parse(values);
+    if (parsed.hotel_id || parsed.room_id)
+      throw new Error("Location pricing cannot contain a hotel or room override.");
+    const db = await createHotelDatabaseClient();
+    if (id) {
+      const { data: existing, error: existingError } = await db
+        .from("hotel_rate_cards")
+        .select("hotel_id,room_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (existingError || !existing)
+        throw existingError ?? new Error("Location rate was not found.");
+      if (existing.hotel_id || existing.room_id)
+        throw new Error("Only location defaults can be edited from this module.");
+    }
+    const userId = (await db.auth.getUser()).data.user?.id ?? null;
+    const query = id
+      ? db.from("hotel_rate_cards").update({ ...parsed, updated_by: userId }).eq("id", id)
+      : db.from("hotel_rate_cards").insert({ ...parsed, created_by: userId, updated_by: userId });
+    const { data, error } = await query.select("id").single();
+    if (error) {
+      if (error.code === "23505")
+        throw new Error("This location, category and meal plan already has a default rate. Edit the existing rate instead.");
+      throw error;
+    }
+    if (!data?.id) throw new Error("Location rate could not be saved.");
+    revalidatePath("/home/hotels/pricing");
+    revalidatePath("/home/hotels", "layout");
+    return { success: true, data: { id: String(data.id) } };
+  } catch (e) {
+    console.error("Save hotel location rate failed:", e);
+    return { success: false, error: message(e, "Failed to save location rate.") };
+  }
+}
+
+export async function deleteHotelLocationRate(id: string): Promise<Result> {
+  try {
+    await requirePermission("hotels.manage_pricing");
+    const db = await createHotelDatabaseClient();
+    const { data: rate, error: rateError } = await db
+      .from("hotel_rate_cards")
+      .select("hotel_id,room_id")
+      .eq("id", id)
+      .maybeSingle();
+    if (rateError || !rate)
+      throw rateError ?? new Error("Location rate was not found.");
+    if (rate.hotel_id || rate.room_id)
+      throw new Error("Hotel and room overrides cannot be deleted from Location Pricing.");
+    const { data: deleted, error } = await db
+      .from("hotel_rate_cards")
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!deleted) throw new Error("The location rate was not deleted. Verify your pricing permission.");
+    revalidatePath("/home/hotels/pricing");
+    revalidatePath("/home/hotels", "layout");
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: message(e, "Failed to delete location rate.") };
   }
 }

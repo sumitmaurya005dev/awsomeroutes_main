@@ -10,6 +10,9 @@ export const PERMISSIONS = {
     CREATE: "packages.create",
     UPDATE: "packages.update",
     DELETE: "packages.delete",
+    MANAGE_PRICING: "packages.manage_pricing",
+    MANAGE_DEFAULTS: "packages.manage_defaults",
+    PUBLISH: "packages.publish",
   },
 
   DESTINATIONS: {

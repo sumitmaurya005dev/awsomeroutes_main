@@ -1,0 +1,15 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { Package, Plus } from "lucide-react";
+import SearchInput from "@/components/common/search-input";
+import FilterSelect from "@/components/common/filter-select";
+import { PackagesTable } from "@/components/packages/packages-table";
+import { getPackages } from "@/lib/packages/queries";
+import { hasPermission } from "@/lib/auth";
+import type { PackageStatus } from "@/types/package";
+
+export default async function PackagesPage({searchParams}:{searchParams:Promise<{page?:string;search?:string;status?:string}>}){
+ if(!(await hasPermission("packages.view")))notFound();const p=await searchParams;const statuses=new Set(["draft","published","inactive","archived"]);const status=statuses.has(p.status??"")?p.status as PackageStatus:"all";const page=Math.max(1,Number(p.page)||1);
+ const [result,canCreate,canUpdate,canDelete,canPublish]=await Promise.all([getPackages({page,search:p.search,status}),hasPermission("packages.create"),hasPermission("packages.update"),hasPermission("packages.delete"),hasPermission("packages.publish")]);
+ return <main className="min-h-full bg-background"><div className="mx-auto w-full max-w-[1500px] space-y-6 p-4 sm:p-6 lg:p-8"><div className="text-sm text-muted-foreground"><Link href="/home" className="hover:text-foreground">Home</Link><span className="mx-2">/</span><span className="text-foreground">Packages</span></div><section className="flex flex-col gap-5 rounded-2xl border bg-card p-5 shadow-sm sm:p-6 lg:flex-row lg:items-center lg:justify-between"><div className="flex items-start gap-4"><span className="grid h-12 w-12 place-items-center rounded-xl bg-primary/10 text-primary"><Package className="h-6 w-6"/></span><div><div className="flex items-center gap-2"><h1 className="text-2xl font-semibold">Packages</h1><span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">{result.count} packages</span></div><p className="mt-1 text-sm text-muted-foreground">Build complete day-wise tours with live hotel, activity and vehicle pricing.</p></div></div>{canCreate&&<Link href="/home/packages/create" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4"/>Create Package</Link>}</section><section className="space-y-4"><div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"><div><h2 className="font-semibold">All Packages</h2><p className="text-sm text-muted-foreground">Search, publish and manage package products.</p></div><div className="grid gap-2 sm:grid-cols-2"><SearchInput placeholder="Search packages..." className="w-full sm:w-72"/><FilterSelect paramName="status" defaultValue="all" options={[{label:"All status",value:"all"},{label:"Draft",value:"draft"},{label:"Published",value:"published"},{label:"Inactive",value:"inactive"},{label:"Archived",value:"archived"}]} className="w-52"/></div></div><PackagesTable {...result} canUpdate={canUpdate} canDelete={canDelete} canPublish={canPublish}/></section></div></main>;
+}
