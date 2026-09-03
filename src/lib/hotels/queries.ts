@@ -3,9 +3,95 @@ import type {
   HotelAmenity,
   HotelCategory,
   HotelDetail,
+  HotelLocationRate,
   HotelListItem,
+  HotelPricingLocation,
   HotelStatus,
 } from "@/types/hotel";
+
+export async function getHotelLocationRates(filters: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: "active" | "inactive" | "all";
+  locationId?: string;
+} = {}) {
+  const page = Math.max(1, filters.page ?? 1);
+  const limit = Math.min(100, Math.max(1, filters.limit ?? 25));
+  const from = (page - 1) * limit;
+  const db = await createHotelDatabaseClient();
+
+  let matchingLocationIds: string[] | null = null;
+  if (filters.search?.trim()) {
+    const search = filters.search.trim().replace(/[%_,()]/g, "");
+    const { data, error } = await db
+      .from("locations")
+      .select("id")
+      .ilike("name", `%${search}%`)
+      .limit(1000);
+    if (error) throw new Error("Failed to search hotel pricing locations.");
+    matchingLocationIds = (data ?? []).map((item) => item.id);
+  }
+
+  let query = db
+    .from("hotel_rate_cards")
+    .select(
+      "*,category:hotel_categories(id,name,slug),location:locations(id,name,destination:destinations(name,region:regions(name)))",
+      { count: "exact" },
+    )
+    .is("hotel_id", null)
+    .is("room_id", null)
+    .order("location_id")
+    .order("category_id")
+    .order("meal_plan")
+    .range(from, from + limit - 1);
+
+  if (filters.status && filters.status !== "all")
+    query = query.eq("status", filters.status);
+  if (filters.locationId) query = query.eq("location_id", filters.locationId);
+  if (matchingLocationIds) {
+    if (!matchingLocationIds.length)
+      return { data: [] as HotelLocationRate[], count: 0, page, limit, totalPages: 1 };
+    query = query.in("location_id", matchingLocationIds);
+  }
+
+  const { data, error, count } = await query;
+  if (error) {
+    console.error("Load hotel location rates failed:", error);
+    throw new Error("Failed to load location pricing.");
+  }
+  return {
+    data: (data ?? []) as unknown as HotelLocationRate[],
+    count: count ?? 0,
+    page,
+    limit,
+    totalPages: Math.max(1, Math.ceil((count ?? 0) / limit)),
+  };
+}
+
+export async function getHotelLocationPricingReferences() {
+  const db = await createHotelDatabaseClient();
+  const [locations, categories] = await Promise.all([
+    db
+      .from("locations")
+      .select("id,name,destination:destinations(name,region:regions(name))")
+      .eq("status", "active")
+      .order("name")
+      .limit(5000),
+    db
+      .from("hotel_categories")
+      .select("id,name,slug")
+      .eq("status", "active")
+      .order("display_order")
+      .order("name"),
+  ]);
+  if (locations.error || categories.error)
+    throw new Error("Failed to load location pricing references.");
+  return {
+    locations: (locations.data ?? []) as unknown as HotelPricingLocation[],
+    categories: (categories.data ?? []) as unknown as HotelCategory[],
+  };
+}
 
 export async function getHotels(
   filters: {

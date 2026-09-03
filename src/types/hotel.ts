@@ -72,6 +72,26 @@ export type HotelRateCard = {
   status: "active" | "inactive";
 };
 
+export type HotelLocationRate = HotelRateCard & {
+  location: {
+    id: string;
+    name: string;
+    destination: {
+      name: string;
+      region: { name: string } | null;
+    } | null;
+  } | null;
+};
+
+export type HotelPricingLocation = {
+  id: string;
+  name: string;
+  destination: {
+    name: string;
+    region: { name: string } | null;
+  } | null;
+};
+
 export type HotelListItem = {
   id: string;
   name: string;

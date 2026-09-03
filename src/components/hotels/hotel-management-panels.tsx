@@ -1,6 +1,7 @@
 "use client";
 import * as React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Baby,
@@ -248,12 +249,22 @@ export function HotelManagementPanels({
               </p>
             </div>
           </div>
-          {canManagePricing && (
-            <Button type="button" onClick={() => setRateEditor("new")}>
-              <IndianRupee className="mr-2 h-4 w-4" />
-              Add rate
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2">
+            {canManagePricing && (
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link href={`/home/hotels/pricing?locationId=${hotel.location_id}`} />}
+              >
+                <MapPin className="mr-2 h-4 w-4" />Location pricing
+              </Button>
+            )}
+            {canManagePricing && canOverridePrice && (
+              <Button type="button" onClick={() => setRateEditor("new")}>
+                <IndianRupee className="mr-2 h-4 w-4" />Add override
+              </Button>
+            )}
+          </div>
         </div>
         {hotel.rates.length ? (
           <div className="overflow-x-auto rounded-xl border">
@@ -306,8 +317,14 @@ export function HotelManagementPanels({
                       </td>
                       <td className="p-3">
                         <div className="flex justify-end">
-                          {canManagePricing &&
-                            (!r.hotel_id || canOverridePrice) && (
+                          {!r.hotel_id && canManagePricing ? (
+                            <Link
+                              href={`/home/hotels/pricing?locationId=${hotel.location_id}`}
+                              className="rounded-lg px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10"
+                            >
+                              Manage centrally
+                            </Link>
+                          ) : canManagePricing && canOverridePrice ? (
                               <button
                                 type="button"
                                 onClick={() => setRateEditor(r)}
@@ -315,9 +332,8 @@ export function HotelManagementPanels({
                               >
                                 <Pencil className="h-4 w-4" />
                               </button>
-                            )}
-                          {canManagePricing &&
-                            (!r.hotel_id || canOverridePrice) && (
+                            ) : null}
+                          {r.hotel_id && canManagePricing && canOverridePrice && (
                               <button
                                 type="button"
                                 disabled={busy === r.id}
@@ -772,27 +788,179 @@ function RateDialog({
     ? "room"
     : initial?.hotel_id
       ? "hotel"
-      : "location";
+      : canOverridePrice
+        ? "hotel"
+        : "location";
+  const initialCategoryId = initial?.category_id ?? categories[0]?.id ?? "";
+  const initialMealPlan = initial?.meal_plan ?? "CP";
+  const initialInherited = initial
+    ? undefined
+    : hotel.rates.find(
+        (rate) =>
+          !rate.hotel_id &&
+          !rate.room_id &&
+          rate.status === "active" &&
+          rate.category_id === initialCategoryId &&
+          rate.meal_plan === initialMealPlan,
+      );
   const [form, setForm] = React.useState({
     scope: initialScope,
-    category_id: initial?.category_id ?? categories[0]?.id ?? "",
+    category_id: initialCategoryId,
     room_id: initial?.room_id ?? "",
-    meal_plan: initial?.meal_plan ?? "CP",
-    base: initial ? rupees(initial.base_room_rate_paise) : "",
-    adult: initial ? rupees(initial.extra_adult_bed_paise) : "",
-    childBed: initial ? rupees(initial.child_with_bed_paise) : "",
-    childShare: initial ? rupees(initial.child_without_bed_paise) : "",
-    infant: initial ? rupees(initial.infant_sharing_paise) : "0",
-    policy: initial?.child_pricing_policy ?? "child_rates",
-    childBedAllowed: initial?.child_with_bed_allowed ?? true,
-    childShareAllowed: initial?.child_without_bed_allowed ?? true,
+    meal_plan: initialMealPlan,
+    base: initial
+      ? rupees(initial.base_room_rate_paise)
+      : initialInherited
+        ? rupees(initialInherited.base_room_rate_paise)
+        : "",
+    adult: initial
+      ? rupees(initial.extra_adult_bed_paise)
+      : initialInherited
+        ? rupees(initialInherited.extra_adult_bed_paise)
+        : "",
+    childBed: initial
+      ? rupees(initial.child_with_bed_paise)
+      : initialInherited
+        ? rupees(initialInherited.child_with_bed_paise)
+        : "",
+    childShare: initial
+      ? rupees(initial.child_without_bed_paise)
+      : initialInherited
+        ? rupees(initialInherited.child_without_bed_paise)
+        : "",
+    infant: initial
+      ? rupees(initial.infant_sharing_paise)
+      : initialInherited
+        ? rupees(initialInherited.infant_sharing_paise)
+        : "0",
+    policy:
+      initial?.child_pricing_policy ??
+      initialInherited?.child_pricing_policy ??
+      "child_rates",
+    childBedAllowed:
+      initial?.child_with_bed_allowed ??
+      initialInherited?.child_with_bed_allowed ??
+      true,
+    childShareAllowed:
+      initial?.child_without_bed_allowed ??
+      initialInherited?.child_without_bed_allowed ??
+      true,
     notes: initial?.notes ?? "",
     status: initial?.status ?? "active",
   });
   const room = form.room_id
     ? hotel.rooms.find((x) => x.id === form.room_id)
     : null;
-  const scopeAllowed = form.scope === "location" || canOverridePrice;
+  const effectiveCategoryId =
+    form.scope === "room" ? (room?.category_id ?? "") : form.category_id;
+  const findLocationDefault = (categoryId: string, mealPlan: MealPlan) =>
+    hotel.rates.find(
+      (rate) =>
+        !rate.hotel_id &&
+        !rate.room_id &&
+        rate.status === "active" &&
+        rate.category_id === categoryId &&
+        rate.meal_plan === mealPlan,
+    );
+  const findHotelOverride = (categoryId: string, mealPlan: MealPlan) =>
+    hotel.rates.find(
+      (rate) =>
+        rate.hotel_id === hotel.id &&
+        !rate.room_id &&
+        rate.status === "active" &&
+        rate.category_id === categoryId &&
+        rate.meal_plan === mealPlan,
+    );
+  const locationDefault = findLocationDefault(
+    effectiveCategoryId,
+    form.meal_plan as MealPlan,
+  );
+  const inheritedRate =
+    form.scope === "room"
+      ? findHotelOverride(effectiveCategoryId, form.meal_plan as MealPlan) ??
+        locationDefault
+      : locationDefault;
+  const scopeAllowed = form.scope !== "location" && canOverridePrice;
+  const readOnlyPricing = form.scope === "location";
+
+  function pricingPatch(rate: HotelRateCard | undefined) {
+    return rate
+      ? {
+          base: rupees(rate.base_room_rate_paise),
+          adult: rupees(rate.extra_adult_bed_paise),
+          childBed: rupees(rate.child_with_bed_paise),
+          childShare: rupees(rate.child_without_bed_paise),
+          infant: rupees(rate.infant_sharing_paise),
+          policy: rate.child_pricing_policy,
+          childBedAllowed: rate.child_with_bed_allowed,
+          childShareAllowed: rate.child_without_bed_allowed,
+        }
+      : {
+          base: "",
+          adult: "",
+          childBed: "",
+          childShare: "",
+          infant: "0",
+          policy: "child_rates" as const,
+          childBedAllowed: true,
+          childShareAllowed: true,
+        };
+  }
+
+  function changeScope(scope: string) {
+    setError(null);
+    setForm((current) => {
+      if (scope === "room")
+        return { ...current, scope, room_id: "" };
+      const fallback = findLocationDefault(
+        current.category_id,
+        current.meal_plan as MealPlan,
+      );
+      return { ...current, scope, room_id: "", ...pricingPatch(fallback) };
+    });
+  }
+
+  function changeCategory(categoryId: string) {
+    setForm((current) => {
+      const fallback = findLocationDefault(
+        categoryId,
+        current.meal_plan as MealPlan,
+      );
+      return { ...current, category_id: categoryId, ...pricingPatch(fallback) };
+    });
+  }
+
+  function changeMealPlan(mealPlan: MealPlan) {
+    setForm((current) => {
+      const selectedRoom = current.room_id
+        ? hotel.rooms.find((item) => item.id === current.room_id)
+        : null;
+      const categoryId =
+        current.scope === "room"
+          ? (selectedRoom?.category_id ?? "")
+          : current.category_id;
+      const fallback =
+        current.scope === "room"
+          ? findHotelOverride(categoryId, mealPlan) ??
+            findLocationDefault(categoryId, mealPlan)
+          : findLocationDefault(categoryId, mealPlan);
+      return { ...current, meal_plan: mealPlan, ...pricingPatch(fallback) };
+    });
+  }
+
+  function changeRoom(roomId: string) {
+    const selectedRoom = hotel.rooms.find((item) => item.id === roomId);
+    const categoryId = selectedRoom?.category_id ?? "";
+    const mealPlan = form.meal_plan as MealPlan;
+    const fallback =
+      findHotelOverride(categoryId, mealPlan) ??
+      findLocationDefault(categoryId, mealPlan);
+    setForm((current) => ({
+      ...current,
+      room_id: roomId,
+      ...pricingPatch(fallback),
+    }));
+  }
   const previewBase = Math.max(0, Number(form.base) || 0);
   const previewExtraAdult = Math.max(0, Number(form.adult) || 0);
   const adultPricingPreview = [
@@ -814,6 +982,11 @@ function RateDialog({
   ];
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (form.scope === "location") {
+      onClose();
+      return;
+    }
 
     if (!scopeAllowed) {
       setError(
@@ -858,7 +1031,7 @@ function RateDialog({
       const result = await saveHotelRate(initial?.id ?? null, hotel.id, {
         location_id: hotel.location_id,
         category_id: categoryId,
-        hotel_id: form.scope === "location" ? null : hotel.id,
+        hotel_id: hotel.id,
         room_id: form.scope === "room" ? form.room_id : null,
         meal_plan: form.meal_plan as MealPlan,
         base_room_rate_paise: paise(form.base),
@@ -903,7 +1076,8 @@ function RateDialog({
             {initial ? "Edit rate card" : "Add rate card"}
           </DialogTitle>
           <DialogDescription>
-            All rates are per room per night, tax-inclusive.
+            Location pricing is inherited automatically. Create an override only
+            when this hotel or room needs a different rate.
           </DialogDescription>
         </DialogHeader>
         <form
@@ -923,6 +1097,46 @@ function RateDialog({
               {error}
             </p>
           )}
+          {form.scope === "location" && (
+            <div
+              className={`rounded-xl border p-3 text-sm ${
+                locationDefault
+                  ? "border-emerald-500/25 bg-emerald-500/5 text-emerald-800 dark:text-emerald-300"
+                  : "border-amber-500/30 bg-amber-500/5 text-amber-800 dark:text-amber-300"
+              }`}
+            >
+              {locationDefault ? (
+                <p>
+                  This active location default is inherited automatically. Its
+                  values are read-only here; update it from{" "}
+                  <Link
+                    href={`/home/hotels/pricing?locationId=${hotel.location_id}`}
+                    className="font-semibold underline underline-offset-2"
+                  >
+                    Location Pricing
+                  </Link>
+                  .
+                </p>
+              ) : (
+                <p>
+                  No active location default exists for this category and meal
+                  plan. Add it in{" "}
+                  <Link
+                    href={`/home/hotels/pricing?locationId=${hotel.location_id}`}
+                    className="font-semibold underline underline-offset-2"
+                  >
+                    Location Pricing
+                  </Link>
+                  .
+                </p>
+              )}
+            </div>
+          )}
+          {form.scope !== "location" && inheritedRate && !initial && (
+            <p className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
+              Fields were prefilled from the active {inheritedRate.hotel_id ? "hotel override" : "location default"}. You can now change them for this override.
+            </p>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-2 text-sm font-medium">
               Scope
@@ -930,9 +1144,7 @@ function RateDialog({
                 className={select}
                 value={form.scope}
                 disabled={Boolean(initial)}
-                onChange={(e) =>
-                  setForm((x) => ({ ...x, scope: e.target.value, room_id: "" }))
-                }
+                onChange={(e) => changeScope(e.target.value)}
               >
                 <option value="location">Location default</option>
                 <option value="hotel" disabled={!canOverridePrice}>
@@ -950,9 +1162,7 @@ function RateDialog({
                   required
                   className={select}
                   value={form.room_id}
-                  onChange={(e) =>
-                    setForm((x) => ({ ...x, room_id: e.target.value }))
-                  }
+                  onChange={(e) => changeRoom(e.target.value)}
                 >
                   <option value="">Select room</option>
                   {hotel.rooms.map((x) => (
@@ -968,9 +1178,7 @@ function RateDialog({
                 <select
                   className={select}
                   value={form.category_id}
-                  onChange={(e) =>
-                    setForm((x) => ({ ...x, category_id: e.target.value }))
-                  }
+                  onChange={(e) => changeCategory(e.target.value)}
                 >
                   {categories.map((x) => (
                     <option key={x.id} value={x.id}>
@@ -985,12 +1193,7 @@ function RateDialog({
               <select
                 className={select}
                 value={form.meal_plan}
-                onChange={(e) =>
-                  setForm((x) => ({
-                    ...x,
-                    meal_plan: e.target.value as MealPlan,
-                  }))
-                }
+                onChange={(e) => changeMealPlan(e.target.value as MealPlan)}
               >
                 <option value="EP">EP · Room only</option>
                 <option value="CP">CP · Breakfast</option>
@@ -1009,6 +1212,8 @@ function RateDialog({
                 {label}
                 <Input
                   required
+                  readOnly={readOnlyPricing}
+                  aria-readonly={readOnlyPricing}
                   type="number"
                   min="0"
                   step="0.01"
@@ -1024,6 +1229,7 @@ function RateDialog({
               <select
                 className={select}
                 value={form.policy}
+                disabled={readOnlyPricing}
                 onChange={(e) =>
                   setForm((x) => ({
                     ...x,
@@ -1040,6 +1246,7 @@ function RateDialog({
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
+                    disabled={readOnlyPricing}
                     checked={form.childBedAllowed}
                     onChange={(e) =>
                       setForm((x) => ({
@@ -1053,6 +1260,7 @@ function RateDialog({
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
+                    disabled={readOnlyPricing}
                     checked={form.childShareAllowed}
                     onChange={(e) =>
                       setForm((x) => ({
@@ -1106,6 +1314,7 @@ function RateDialog({
               Notes
               <Textarea
                 value={form.notes}
+                readOnly={readOnlyPricing}
                 onChange={(e) =>
                   setForm((x) => ({ ...x, notes: e.target.value }))
                 }
@@ -1116,10 +1325,14 @@ function RateDialog({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || !scopeAllowed}>
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Save
-              rate
-            </Button>
+            {form.scope === "location" ? (
+              <Button type="button" onClick={onClose}>Done</Button>
+            ) : (
+              <Button type="submit" disabled={saving || !scopeAllowed}>
+                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save override
+              </Button>
+            )}
           </DialogFooter>
         </form>
       </DialogContent>

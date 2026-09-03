@@ -1,6 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { calculateActivityPrice } from "../src/lib/activities/pricing.ts";
+
+const activityMutations = readFileSync(
+  new URL("../src/lib/activities/mutations.ts", import.meta.url),
+  "utf8",
+);
+
+test("activity pricing changes invalidate linked package price pages", () => {
+  assert.match(
+    activityMutations,
+    /revalidatePath\("\/home\/packages\/\[id\]\/edit", "page"\)/,
+  );
+  for (const mutation of [
+    "saveOffering",
+    "saveVariant",
+    "saveParticipantPrice",
+    "saveCharge",
+    "saveSlot",
+  ]) {
+    assert.match(
+      activityMutations,
+      new RegExp(
+        `function ${mutation}[\\s\\S]*?revalidateActivityPricingConsumers\\(\\)`,
+      ),
+    );
+  }
+});
 
 test("per-unit safari adds units and mandatory per-person/per-booking charges", () => {
   const result = calculateActivityPrice({

@@ -39,16 +39,22 @@ export const superAdminNavigation: SidebarItem[] = [
     children: [
       {
         title: "All Packages",
-        href: "/dashboard/packages",
+        href: "/home/packages",
         icon: "list",
         permission: "packages.view",
       },
 
       {
         title: "Create Package",
-        href: "/dashboard/packages/create",
+        href: "/home/packages/create",
         icon: "plus",
         permission: "packages.create",
+      },
+      {
+        title: "Content Defaults",
+        href: "/home/packages/content-defaults",
+        icon: "file",
+        permission: "packages.manage_defaults",
       },
     ],
   },
@@ -179,6 +185,12 @@ export const superAdminNavigation: SidebarItem[] = [
         href: "/home/hotels/create",
         icon: "plus",
         permission: "hotels.create",
+      },
+      {
+        title: "Location Pricing",
+        href: "/home/hotels/pricing",
+        icon: "list",
+        permission: "hotels.manage_pricing",
       },
     ],
   },

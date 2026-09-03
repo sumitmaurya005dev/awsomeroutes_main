@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import {
   canCreateRoomForHotel,
@@ -86,4 +87,40 @@ test("hotel website links allow only HTTP and HTTPS protocols", () => {
   assert.equal(isAllowedHotelWebsiteUrl("http://hotel.example.com"), true);
   assert.equal(isAllowedHotelWebsiteUrl("javascript:alert(1)"), false);
   assert.equal(isAllowedHotelWebsiteUrl("data:text/html,test"), false);
+});
+
+test("location pricing is centralized and hotel forms only save overrides", () => {
+  const mutations = readFileSync(
+    new URL("../src/lib/hotels/mutations.ts", import.meta.url),
+    "utf8",
+  );
+  const queries = readFileSync(
+    new URL("../src/lib/hotels/queries.ts", import.meta.url),
+    "utf8",
+  );
+  const panel = readFileSync(
+    new URL(
+      "../src/components/hotels/hotel-management-panels.tsx",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+
+  assert.match(mutations, /Location defaults must be managed from Location Pricing/);
+  assert.match(queries, /\.is\("hotel_id", null\)[\s\S]*\.is\("room_id", null\)/);
+  assert.match(panel, /Manage centrally/);
+  assert.match(panel, /readOnly=\{readOnlyPricing\}/);
+});
+
+test("database prevents duplicate location, hotel and room rate scopes", () => {
+  const migration = readFileSync(
+    new URL(
+      "../supabase/migrations/20260825130000_hotel_management.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  assert.match(migration, /hotel_rates_location_default_uidx/);
+  assert.match(migration, /hotel_rates_hotel_override_uidx/);
+  assert.match(migration, /hotel_rates_room_override_uidx/);
 });
