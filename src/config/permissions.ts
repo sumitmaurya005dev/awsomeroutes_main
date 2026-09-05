@@ -1,6 +1,15 @@
 // config/permissions.ts
 // Purpose: Role Based Access Control (RBAC).
 export const PERMISSIONS = {
+  CUSTOM_ITINERARIES: {
+    VIEW: "custom_itineraries.view",
+    CREATE: "custom_itineraries.create",
+    UPDATE: "custom_itineraries.update",
+    DELETE: "custom_itineraries.delete",
+    MANAGE_PRICING: "custom_itineraries.manage_pricing",
+    FINALIZE: "custom_itineraries.finalize",
+    EXPORT: "custom_itineraries.export",
+  },
   DASHBOARD: {
     VIEW: "dashboard.view",
   },
