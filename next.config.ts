@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/api/custom-itineraries/*/pdf": ["./assets/fonts/NotoSans-Regular.ttf"],
+  },
   images: {
     remotePatterns: [
       {

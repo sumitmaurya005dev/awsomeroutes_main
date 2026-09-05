@@ -5,6 +5,7 @@ export const sidebarGroups = [
       "Dashboard",
       "Bookings",
       "Packages",
+      "Custom Itineraries",
       "Countries",
       "Regions",
       "Destinations",

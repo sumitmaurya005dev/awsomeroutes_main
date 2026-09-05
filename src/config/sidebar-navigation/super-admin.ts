@@ -7,6 +7,15 @@ export const superAdminNavigation: SidebarItem[] = [
     icon: "dashboard",
     permission: "dashboard.view",
   },
+  {
+    title: "Custom Itineraries",
+    icon: "clipboard",
+    permission: "custom_itineraries.view",
+    children: [
+      { title: "All Itineraries", href: "/home/custom-itineraries", icon: "list", permission: "custom_itineraries.view" },
+      { title: "Create Itinerary", href: "/home/custom-itineraries/create", icon: "plus", permission: "custom_itineraries.create" },
+    ],
+  },
 
   // Later implementation
   //  {
