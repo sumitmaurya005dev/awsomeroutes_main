@@ -15,7 +15,15 @@ type Editor={kind:"vehicle";value:PackageVehicleOption|null}|{kind:"content";val
 
 export function PackageCommercialManager({pkg,refs,canEdit,canManagePricing}:{pkg:PackageDetail;refs:PackageReferenceData;canEdit:boolean;canManagePricing:boolean}){
  const [editor,setEditor]=React.useState<Editor>(null),[busy,setBusy]=React.useState(false),[error,setError]=React.useState<string|null>(null);
- const matrix=React.useMemo(()=>calculatePackagePriceMatrix(pkg,refs),[pkg,refs]);
+ const liveMatrix=React.useMemo(()=>calculatePackagePriceMatrix(pkg,refs),[pkg,refs]);
+ const savedMatrix=React.useMemo(()=>pkg.saved_prices.map(row=>({
+  pax:row.pax,categoryId:row.hotel_category_id,categoryName:refs.hotel_categories.find(category=>category.id===row.hotel_category_id)?.name??"Category",
+  hotelPaise:row.hotel_total_paise,activityPaise:row.activity_total_paise,vehiclePaise:row.vehicle_total_paise,
+  adjustmentPaise:row.adjustment_total_paise,groupTotalPaise:row.group_total_paise,perPersonPaise:row.per_person_paise,
+  roomCount:row.room_count,extraBedCount:row.extra_bed_count,warnings:row.warnings,lines:[],
+ })),[pkg.saved_prices,refs.hotel_categories]);
+ const hasFreshSavedPricing=pkg.calculated_pricing_revision===pkg.pricing_revision&&savedMatrix.length>0;
+ const matrix=hasFreshSavedPricing?savedMatrix:liveMatrix;
  async function remove(kind:"vehicle"|"content"|"faq"|"adjustment",id:string){if(!confirm("Delete this item?"))return;setBusy(true);setError(null);try{const result=await deletePackageChild(kind,id,pkg.id);if(!result.success)setError(result.error);}catch(e){setError(getNetworkErrorMessage(e));}finally{setBusy(false);}}
  async function syncDefaults(){if(!confirm("Sync the latest default content into this package? Customized items will be preserved."))return;setBusy(true);setError(null);try{const result=await syncPackageContentDefaults(pkg.id);if(!result.success)setError(result.error);}catch(e){setError(getNetworkErrorMessage(e));}finally{setBusy(false);}}
  const contentSections=Array.from(pkg.content.reduce((groups,item)=>{const key=`${item.item_type}:${item.section_title}`;const group=groups.get(key)??{type:item.item_type,title:item.section_title,items:[] as PackageContentItem[]};group.items.push(item);groups.set(key,group);return groups;},new Map<string,{type:PackageContentType;title:string;items:PackageContentItem[]}>()).values()).sort((a,b)=>(a.items[0]?.display_order??0)-(b.items[0]?.display_order??0));
@@ -38,6 +46,11 @@ export function PackageCommercialManager({pkg,refs,canEdit,canManagePricing}:{pk
   </section>
 
   <section className="space-y-4 rounded-2xl border bg-card p-5 shadow-sm sm:p-6"><PanelHead icon={IndianRupee} title="Dynamic pricing preview" description="Live per-person price for 2–6 adults, calculated from selected hotels, included activities and vehicles." action={canManagePricing?<Button type="button" onClick={()=>setEditor({kind:"adjustment",value:null})}><Plus/>Pricing adjustment</Button>:null}/>
+   <div className={`rounded-xl border p-3 text-xs ${hasFreshSavedPricing?"border-emerald-500/30 bg-emerald-500/5 text-emerald-800 dark:text-emerald-200":"border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/20 dark:text-amber-200"}`}>
+    {hasFreshSavedPricing
+     ? `Saved website pricing is ${pkg.pricing_status}. Last calculated ${pkg.pricing_calculated_at?new Date(pkg.pricing_calculated_at).toLocaleString("en-IN"):"recently"}.`
+     : `Pricing refresh is ${pkg.pricing_status??"queued"}. This preview is live; the website continues using the last complete saved matrix until refresh finishes.`}
+   </div>
    <PriceTable matrix={matrix} categories={refs.hotel_categories}/>
    {pkg.price_adjustments.length>0&&<div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{pkg.price_adjustments.map(x=>{const category=refs.hotel_categories.find(c=>c.id===x.hotel_category_id);return <Card key={x.id} title={category?.name??"Category"} description={`${x.markup_bps/100}% markup · ${formatPackageMoney(x.fixed_adjustment_paise)} fixed`} canEdit={canManagePricing} busy={busy} active={editor?.kind==="adjustment"&&editor.value?.id===x.id} onEdit={()=>setEditor({kind:"adjustment",value:x})} onDelete={()=>remove("adjustment",x.id)}/>;})}</div>}
    {editor?.kind==="adjustment"&&<AdjustmentEditor key={`adjustment-${editor.value?.id??"new"}`} pkg={pkg} refs={refs} value={editor.value} busy={busy} setBusy={setBusy} onClose={()=>setEditor(null)} onError={setError}/>} 

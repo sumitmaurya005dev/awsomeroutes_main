@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createPackageDatabaseClient } from "./database";
 import type { PackageContentTemplate, PackageDetail, PackageListItem, PackageReferenceData, PackageStatus } from "@/types/package";
 
@@ -18,9 +19,9 @@ export async function getPackages(filters: { page?: number; limit?: number; sear
   return {data:(data??[]) as unknown as PackageListItem[],count:count??0,page,limit,totalPages:Math.max(1,Math.ceil((count??0)/limit))};
 }
 
-export async function getPackageById(id:string):Promise<PackageDetail|null>{
-  const db=await createPackageDatabaseClient();
-  const {data,error}=await db.from("packages").select(`*,primary_destination:destinations!packages_primary_destination_id_fkey(id,name,region:regions(name,country:countries(name))),start_location:locations!packages_start_location_id_fkey(id,name,destination:destinations(id,name)),end_location:locations!packages_end_location_id_fkey(id,name,destination:destinations(id,name)),featured_image:media_assets!packages_featured_image_asset_id_fkey(id,original_url,file_name,alt_text),gallery:package_media(id,media_asset_id,caption,display_order,media_asset:media_assets(id,original_url,file_name,alt_text)),destinations:package_destinations(destination_id,display_order,destination:destinations(id,name,region:regions(name,country:countries(name)))),itinerary:package_itinerary_days(*,start_location:locations!package_itinerary_days_start_location_id_fkey(id,name,destination:destinations(id,name)),end_location:locations!package_itinerary_days_end_location_id_fkey(id,name,destination:destinations(id,name)),overnight_location:locations!package_itinerary_days_overnight_location_id_fkey(id,name,destination:destinations(id,name)),activities:package_day_activities(*,offering:activity_offerings(id,activity_id,location_id,pricing_model,base_price_paise,minimum_participants,maximum_participants_per_unit,maximum_units_per_booking,maximum_participants_per_booking,minimum_billable_participants,tax_included,tax_rate_bps,status,activity:activities(id,name),location:locations(id,name)),variant:activity_variants(id,name)),hotels:package_day_hotels(*,category:hotel_categories(id,name),hotel:hotels(id,name),room:hotel_rooms(id,name))),vehicles:package_vehicle_options(*,base_location:locations(id,name,destination:destinations(id,name)),category:vehicle_categories(id,name),model:vehicle_models(id,name),vendor:transport_vendors(id,name)),content:package_content_items(*),faqs:package_faqs(*),price_adjustments:package_price_adjustments(*)`).eq("id",id).maybeSingle();
+export async function getPackageById(id:string,client?:SupabaseClient):Promise<PackageDetail|null>{
+  const db=client??await createPackageDatabaseClient();
+  const {data,error}=await db.from("packages").select(`*,primary_destination:destinations!packages_primary_destination_id_fkey(id,name,region:regions(name,country:countries(name))),start_location:locations!packages_start_location_id_fkey(id,name,destination:destinations(id,name)),end_location:locations!packages_end_location_id_fkey(id,name,destination:destinations(id,name)),featured_image:media_assets!packages_featured_image_asset_id_fkey(id,original_url,file_name,alt_text),gallery:package_media(id,media_asset_id,caption,display_order,media_asset:media_assets(id,original_url,file_name,alt_text)),destinations:package_destinations(destination_id,display_order,destination:destinations(id,name,region:regions(name,country:countries(name)))),itinerary:package_itinerary_days(*,start_location:locations!package_itinerary_days_start_location_id_fkey(id,name,destination:destinations(id,name)),end_location:locations!package_itinerary_days_end_location_id_fkey(id,name,destination:destinations(id,name)),overnight_location:locations!package_itinerary_days_overnight_location_id_fkey(id,name,destination:destinations(id,name)),activities:package_day_activities(*,offering:activity_offerings(id,activity_id,location_id,pricing_model,base_price_paise,minimum_participants,maximum_participants_per_unit,maximum_units_per_booking,maximum_participants_per_booking,minimum_billable_participants,tax_included,tax_rate_bps,status,activity:activities(id,name),location:locations(id,name)),variant:activity_variants(id,name)),hotels:package_day_hotels(*,category:hotel_categories(id,name),hotel:hotels(id,name),room:hotel_rooms(id,name))),vehicles:package_vehicle_options(*,base_location:locations(id,name,destination:destinations(id,name)),category:vehicle_categories(id,name),model:vehicle_models(id,name),vendor:transport_vendors(id,name)),content:package_content_items(*),faqs:package_faqs(*),price_adjustments:package_price_adjustments(*),saved_prices:package_price_matrix(*)`).eq("id",id).maybeSingle();
   if(error){throw new Error("Failed to load package.");}if(!data)return null;
   const item=data as unknown as PackageDetail;
   item.gallery=[...(item.gallery??[])].sort((a,b)=>a.display_order-b.display_order);
@@ -29,11 +30,12 @@ export async function getPackageById(id:string):Promise<PackageDetail|null>{
   item.vehicles=[...(item.vehicles??[])].sort((a,b)=>a.display_order-b.display_order);
   item.content=[...(item.content??[])].sort((a,b)=>a.display_order-b.display_order);
   item.faqs=[...(item.faqs??[])].sort((a,b)=>a.display_order-b.display_order);
+  item.saved_prices=[...(item.saved_prices??[])].sort((a,b)=>a.pax-b.pax||a.hotel_category_id.localeCompare(b.hotel_category_id));
   return item;
 }
 
-export async function getPackageReferenceData():Promise<PackageReferenceData>{
-  const db=await createPackageDatabaseClient();
+export async function getPackageReferenceData(client?:SupabaseClient):Promise<PackageReferenceData>{
+  const db=client??await createPackageDatabaseClient();
   const [destinations,locations,categories,hotels,rates,offerings,vehicleCategories,models,vendors,vehicleRates]=await Promise.all([
     db.from("destinations").select("id,name,region:regions(name,country:countries(name))").eq("status","active").order("name").limit(2000),
     db.from("locations").select("id,name,destination:destinations(id,name)").eq("status","active").order("name").limit(5000),

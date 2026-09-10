@@ -24,6 +24,7 @@
       enforce **3 requests/hour/IP**, use PKCE, and return the same response for
       registered and unknown email addresses.
 - [ ] Configure the exact production environment variables from `.env.example`.
+- [ ] Set a strong random server-only `CRON_SECRET` for the package pricing refresh worker.
 - [ ] Set `APP_ORIGIN=https://portal.awesomeroutes.com` in Production and use the exact preview origin only in an isolated preview environment.
 - [ ] Confirm secret keys exist only in server runtime settings.
 - [ ] Confirm the Supabase project URL is HTTPS, database access requires authentication, no direct PostgreSQL port is exposed by the deployment, and all migrations/RLS policies are applied.
@@ -44,6 +45,7 @@
 - [ ] A forged catalog form cannot bind an arbitrary URL or a private profile
       asset; the saved URL must come from the selected public Media Library row.
 - [ ] Activity master data, gallery, pricing rules, slots, and FAQs save correctly.
+- [ ] Updating a hotel, activity, or vehicle rate refreshes linked package price matrices; published packages expose only the current complete revision.
 - [ ] A user without `activities.override_price` cannot set or clear overrides.
 - [ ] Verify mobile navigation and keyboard-accessible dialogs.
 

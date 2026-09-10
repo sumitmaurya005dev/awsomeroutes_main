@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { PermissionKey } from "@/config/permissions";
 import { getUserPermissions, requirePermission } from "@/lib/auth";
 import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
+import { processPackagePricingQueueSafely } from "@/lib/packages/pricing-persistence";
 import { createActivityDatabaseClient } from "./database";
 import {
   activitySchema,
@@ -48,7 +49,8 @@ function errorMessage(error: unknown, fallback: string) {
  * mutation so linked packages read the latest rules on their next render.
  * Booking and quotation snapshots are intentionally not changed here.
  */
-function revalidateActivityPricingConsumers() {
+async function revalidateActivityPricingConsumers() {
+  await processPackagePricingQueueSafely();
   revalidatePath("/home/activities");
   revalidatePath("/home/activities/[id]/edit", "page");
   revalidatePath("/home/packages");
@@ -216,7 +218,7 @@ export async function saveOffering(
             "This activity already has an offering for the selected location.",
           )
         : error;
-    revalidateActivityPricingConsumers();
+    await revalidateActivityPricingConsumers();
     return { success: true, data: { id: String(data.id) } };
   } catch (error) {
     return {
@@ -242,7 +244,7 @@ export async function deleteOffering(
       .eq("id", id)
       .eq("activity_id", activityId);
     if (error) throw error;
-    revalidateActivityPricingConsumers();
+    await revalidateActivityPricingConsumers();
     return { success: true };
   } catch (error) {
     return {
@@ -336,7 +338,7 @@ export async function saveVariant(
       parsed,
       "activities.manage_pricing",
     );
-    revalidateActivityPricingConsumers();
+    await revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -365,7 +367,7 @@ export async function saveParticipantPrice(
       parsed,
       "activities.manage_pricing",
     );
-    revalidateActivityPricingConsumers();
+    await revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -392,7 +394,7 @@ export async function saveCharge(
       parsed,
       "activities.manage_pricing",
     );
-    revalidateActivityPricingConsumers();
+    await revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -418,7 +420,7 @@ export async function saveSlot(
       parsed,
       "activities.manage_pricing",
     );
-    revalidateActivityPricingConsumers();
+    await revalidateActivityPricingConsumers();
     return { success: true, data: { id: savedId } };
   } catch (error) {
     return {
@@ -465,7 +467,7 @@ export async function deleteActivityChild(
     if (table === "activity_faqs") {
       revalidatePath(`/home/activities/${activityId}/edit`);
     } else {
-      revalidateActivityPricingConsumers();
+      await revalidateActivityPricingConsumers();
     }
     return { success: true };
   } catch (error) {

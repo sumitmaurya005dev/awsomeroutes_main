@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/auth";
 import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
+import { processPackagePricingQueueSafely } from "@/lib/packages/pricing-persistence";
 import { createVehicleDatabaseClient } from "./database";
 import {
   driverSchema,
@@ -118,6 +119,7 @@ export async function saveVehicleRate(id: string | null, values: VehicleRateValu
     await assertSaved(id
       ? db.from("vehicle_rate_cards").update({ ...parsed, updated_by: userId }).eq("id", id).select("id").single()
       : db.from("vehicle_rate_cards").insert({ ...parsed, created_by: userId, updated_by: userId }).select("id").single());
+    await processPackagePricingQueueSafely();
     return { success: true };
   } catch (error) { return { success: false, error: errorMessage(error, "Failed to save vehicle rate.") }; }
 }
@@ -139,6 +141,7 @@ export async function deleteVehicleRecord(kind: DeletableVehicleKind, id: string
     const db = await createVehicleDatabaseClient();
     const { error } = await db.from(DELETE_TABLES[kind]).delete().eq("id", id);
     if (error) throw error;
+    if (kind === "rate") await processPackagePricingQueueSafely();
     revalidatePath("/home/vehicles");
     return { success: true };
   } catch (error) {

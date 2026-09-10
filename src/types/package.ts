@@ -183,6 +183,33 @@ export type PackagePriceAdjustment = {
   notes: string | null;
 };
 
+export type PackagePricingStatus =
+  | "queued"
+  | "processing"
+  | "ready"
+  | "incomplete"
+  | "failed";
+
+export type PackageSavedPrice = {
+  package_id: string;
+  hotel_category_id: string;
+  pax: number;
+  occupancy_code: string;
+  room_count: number;
+  extra_bed_count: number;
+  hotel_total_paise: number;
+  activity_total_paise: number;
+  vehicle_total_paise: number;
+  adjustment_total_paise: number;
+  group_total_paise: number;
+  per_person_paise: number;
+  currency: string;
+  is_complete: boolean;
+  warnings: string[];
+  pricing_revision: number;
+  calculated_at: string;
+};
+
 export type PackageDetail = {
   id: string;
   primary_destination_id: string;
@@ -201,6 +228,10 @@ export type PackageDetail = {
   seo_title: string | null;
   seo_description: string | null;
   published_at: string | null;
+  pricing_revision: number;
+  calculated_pricing_revision: number | null;
+  pricing_status: PackagePricingStatus;
+  pricing_calculated_at: string | null;
   content_template_id: string | null;
   content_template_version: number | null;
   content_synced_at: string | null;
@@ -221,6 +252,7 @@ export type PackageDetail = {
   content: PackageContentItem[];
   faqs: PackageFaq[];
   price_adjustments: PackagePriceAdjustment[];
+  saved_prices: PackageSavedPrice[];
 };
 
 export type PackageActivityOffering = {

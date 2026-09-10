@@ -41,7 +41,9 @@ export async function proxy(request: NextRequest) {
 
   // ========= PUBLIC ROUTES =========
   // These routes will only be accessable without login
-  const publicRoutes = ["/", "/api/health"];
+  // The pricing worker is unauthenticated at the cookie layer because Vercel
+  // Cron uses a server-only bearer secret which the route verifies itself.
+  const publicRoutes = ["/", "/api/health", "/api/internal/package-pricing"];
   const isLoginRoute = pathname === "/";
 
   const isPublicRoute = publicRoutes.some((route) => {

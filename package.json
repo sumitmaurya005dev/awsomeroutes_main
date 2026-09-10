@@ -19,7 +19,7 @@
     "test:activity": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/activity-pricing.test.mjs",
     "test:hotel": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/hotel-pricing.test.mjs tests/hotel-security.test.mjs",
     "test:vehicle": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/vehicle-pricing.test.mjs tests/vehicle-security.test.mjs",
-    "test:package": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/package-pricing.test.mjs tests/package-security.test.mjs",
+    "test:package": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/package-pricing.test.mjs tests/package-security.test.mjs tests/package-pricing-migration.test.mjs",
     "test:location": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test tests/location-delete.test.mjs"
   },
   "dependencies": {

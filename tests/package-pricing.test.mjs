@@ -29,7 +29,22 @@ test("builds per-person package price from hotel and vehicle totals", () => {
   const [cell] = calculatePackagePriceMatrix(detail, refs, [2]);
   assert.equal(cell.groupTotalPaise, 800000);
   assert.equal(cell.perPersonPaise, 400000);
+  assert.equal(cell.roomCount, 1);
+  assert.equal(cell.extraBedCount, 0);
   assert.deepEqual(cell.warnings, []);
+});
+
+test("persists the standard adult room configuration alongside every price cell", () => {
+  const cells = calculatePackagePriceMatrix(detail, refs, [3, 4, 5, 6]);
+  assert.deepEqual(
+    cells.map(({ pax, roomCount, extraBedCount }) => ({ pax, roomCount, extraBedCount })),
+    [
+      { pax: 3, roomCount: 1, extraBedCount: 1 },
+      { pax: 4, roomCount: 2, extraBedCount: 0 },
+      { pax: 5, roomCount: 2, extraBedCount: 1 },
+      { pax: 6, roomCount: 3, extraBedCount: 0 },
+    ],
+  );
 });
 
 test("reports missing dependencies instead of silently returning a misleading price", () => {

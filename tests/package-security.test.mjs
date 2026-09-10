@@ -6,6 +6,9 @@ const migration=readFileSync(new URL("../supabase/migrations/20260827100000_pack
 const hotelScopeMigration=readFileSync(new URL("../supabase/migrations/20260827130000_package_hotel_destination_scope.sql",import.meta.url),"utf8");
 const contentDefaultsMigration=readFileSync(new URL("../supabase/migrations/20260831100000_package_content_defaults.sql",import.meta.url),"utf8");
 const mutations=readFileSync(new URL("../src/lib/packages/mutations.ts",import.meta.url),"utf8");
+const pricingPersistenceMigration=readFileSync(new URL("../supabase/migrations/20260910100000_package_pricing_persistence.sql",import.meta.url),"utf8");
+const pricingPersistence=readFileSync(new URL("../src/lib/packages/pricing-persistence.ts",import.meta.url),"utf8");
+const pricingWorker=readFileSync(new URL("../src/app/api/internal/package-pricing/route.ts",import.meta.url),"utf8");
 
 test("package tables enforce RLS and public access is published-only",()=>{
  for(const table of ["packages","package_itinerary_days","package_day_activities","package_day_hotels","package_vehicle_options","package_price_adjustments"])
@@ -75,4 +78,37 @@ test("itinerary dependencies rebuild generated inclusions without changing custo
 test("new packages use the transactional core save with optional default content",()=>{
  assert.match(mutations,/save_package_core_with_defaults/);
  assert.match(mutations,/p_apply_content_defaults:parsed\.apply_content_defaults/);
+});
+
+test("calculated package prices are persisted as a revisioned public-safe matrix",()=>{
+ assert.match(pricingPersistenceMigration,/create table if not exists public\.package_price_matrix/);
+ assert.match(pricingPersistenceMigration,/primary key \(package_id, hotel_category_id, pax, occupancy_code\)/);
+ assert.match(pricingPersistenceMigration,/alter table public\.package_price_matrix force row level security/);
+ assert.match(pricingPersistenceMigration,/p\.status = 'published'[\s\S]*p\.pricing_status = 'ready'[\s\S]*p\.calculated_pricing_revision = pricing_revision/);
+ assert.match(pricingPersistenceMigration,/replace_package_price_matrix/);
+ assert.match(pricingPersistenceMigration,/grant execute on function public\.replace_package_price_matrix\(uuid,jsonb,bigint\) to service_role/);
+ assert.doesNotMatch(pricingPersistenceMigration,/grant execute on function public\.replace_package_price_matrix\(uuid,jsonb,bigint\) to authenticated/);
+ assert.match(pricingPersistenceMigration,/current_revision is distinct from p_expected_revision/);
+});
+
+test("all package price dependencies enqueue automatic refreshes",()=>{
+ for(const source of ["hotel_rate_cards","activity_offerings","activity_variants","activity_participant_prices","activity_charges","vehicle_rate_cards","package_day_activities","package_day_hotels","package_vehicle_options","package_price_adjustments"])
+  assert.match(pricingPersistenceMigration,new RegExp(source));
+ assert.match(pricingPersistenceMigration,/for update skip locked/);
+ assert.match(pricingPersistenceMigration,/on conflict\(package_id\) do update/);
+});
+
+test("pricing persistence recalculates on the server and never accepts browser totals",()=>{
+ assert.match(pricingPersistence,/calculatePackagePriceMatrix/);
+ assert.match(pricingPersistence,/createAdminClient/);
+ assert.match(pricingPersistence,/replace_package_price_matrix/);
+ assert.match(pricingPersistence,/p_expected_revision: pkg\.pricing_revision/);
+ assert.match(mutations,/refreshPackagePricingSafely/);
+});
+
+test("background pricing worker requires a server-only bearer secret",()=>{
+ assert.match(pricingWorker,/process\.env\.CRON_SECRET/);
+ assert.match(pricingWorker,/timingSafeEqual/);
+ assert.match(pricingWorker,/Unauthorized/);
+ assert.doesNotMatch(pricingWorker,/request\.json/);
 });

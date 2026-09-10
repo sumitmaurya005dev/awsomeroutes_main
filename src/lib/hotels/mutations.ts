@@ -6,6 +6,7 @@ import {
   requirePermission,
 } from "@/lib/auth";
 import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
+import { processPackagePricingQueueSafely } from "@/lib/packages/pricing-persistence";
 import { createHotelDatabaseClient } from "./database";
 import {
   hotelRateSchema,
@@ -305,6 +306,7 @@ export async function saveHotelRate(
       throw error;
     }
     if (!data?.id) throw new Error("Rate card could not be saved.");
+    await processPackagePricingQueueSafely();
     revalidatePath(`/home/hotels/${hotelContextId}/edit`);
     return { success: true, data: { id: String(data.id) } };
   } catch (e) {
@@ -341,6 +343,7 @@ export async function deleteHotelRate(
       throw new Error(
         "The override was not deleted. Verify your hotel pricing permissions.",
       );
+    await processPackagePricingQueueSafely();
     revalidatePath(`/home/hotels/${hotelId}/edit`);
     return { success: true };
   } catch (e) {
@@ -380,6 +383,7 @@ export async function saveHotelLocationRate(
       throw error;
     }
     if (!data?.id) throw new Error("Location rate could not be saved.");
+    await processPackagePricingQueueSafely();
     revalidatePath("/home/hotels/pricing");
     revalidatePath("/home/hotels", "layout");
     return { success: true, data: { id: String(data.id) } };
@@ -409,6 +413,7 @@ export async function deleteHotelLocationRate(id: string): Promise<Result> {
       .maybeSingle();
     if (error) throw error;
     if (!deleted) throw new Error("The location rate was not deleted. Verify your pricing permission.");
+    await processPackagePricingQueueSafely();
     revalidatePath("/home/hotels/pricing");
     revalidatePath("/home/hotels", "layout");
     return { success: true };

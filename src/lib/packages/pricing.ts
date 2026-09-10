@@ -7,7 +7,7 @@ export type PackagePriceLine = { label: string; amountPaise: number };
 export type PackagePriceCell = {
   pax: number; categoryId: string; categoryName: string; hotelPaise: number; activityPaise: number;
   vehiclePaise: number; adjustmentPaise: number; groupTotalPaise: number; perPersonPaise: number;
-  warnings: string[]; lines: PackagePriceLine[];
+  roomCount: number; extraBedCount: number; warnings: string[]; lines: PackagePriceLine[];
 };
 
 export type PackageHotelRateSource =
@@ -147,8 +147,11 @@ export function calculatePackagePriceMatrix(
       const adjustment = detail.price_adjustments.find(x => x.hotel_category_id === category.id);
       const adjusted = subtotal + Math.round(subtotal * (adjustment?.markup_bps ?? 0) / 10000) + (adjustment?.fixed_adjustment_paise ?? 0);
       const groupTotalPaise = Math.max(0, roundTo(adjusted, adjustment?.rounding_multiple_paise ?? 10000));
+      const roomCount = Math.max(1, Math.floor(pax / 2));
+      const extraBedCount = pax === 1 ? 0 : pax % 2;
       cells.push({ pax, categoryId: category.id, categoryName: category.name, hotelPaise, activityPaise, vehiclePaise,
-        adjustmentPaise: groupTotalPaise - subtotal, groupTotalPaise, perPersonPaise: Math.ceil(groupTotalPaise / pax), warnings, lines });
+        adjustmentPaise: groupTotalPaise - subtotal, groupTotalPaise, perPersonPaise: Math.ceil(groupTotalPaise / pax),
+        roomCount, extraBedCount, warnings, lines });
     }
   }
   return cells;
