@@ -70,8 +70,6 @@ export function AddCountryForm() {
       router.push("/home/countries");
       router.refresh();
     } catch (error) {
-      console.error("Create country form error:", error);
-
       setError(
         error instanceof Error
           ? error.message

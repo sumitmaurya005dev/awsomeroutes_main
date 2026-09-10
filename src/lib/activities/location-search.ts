@@ -44,7 +44,6 @@ export async function searchActivityLocations(
 
   const { data, error } = await query;
   if (error) {
-    console.error("Activity location search failed:", error);
     throw new Error("Locations could not be searched.");
   }
 

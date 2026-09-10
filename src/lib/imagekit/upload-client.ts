@@ -5,12 +5,8 @@ import type { MediaFolder } from "@/config/media";
 
 export type MediaAsset = {
   id: string;
-  imagekit_file_id: string;
   original_url: string;
-  file_path: string;
   file_name: string;
-  mime_type: string;
-  size_bytes: number;
   width: number | null;
   height: number | null;
   folder: string;

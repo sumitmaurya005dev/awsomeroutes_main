@@ -22,8 +22,8 @@ function message(error:unknown,fallback:string){
     if(e.code==="23503")return getDeleteDependencyMessage(e,fallback);
     if(e.code==="23505")return "A record with the same unique value already exists.";
     if(e.code==="42501")return "Your role does not have permission to perform this action.";
-    if(e.message?.trim())return e.message;}
-  return error instanceof Error?error.message:fallback;
+  }
+  return error instanceof Error&&error.message.startsWith("You do not have permission")?error.message:fallback;
 }
 function refresh(packageId?:string){revalidatePath("/home/packages");if(packageId)revalidatePath(`/home/packages/${packageId}/edit`);}
 function corePayload(values:PackageValues){const {gallery_asset_ids,destination_ids,apply_content_defaults,...payload}=values;void gallery_asset_ids;void destination_ids;void apply_content_defaults;return payload;}
@@ -36,14 +36,16 @@ export async function savePackageCore(id:string|null,values:PackageValues):Promi
     const {data,error}=await db.rpc("save_package_core_with_defaults",{p_package_id:id,p_package:corePayload(parsed),p_gallery_asset_ids:[...new Set(parsed.gallery_asset_ids)],p_destination_ids:[...new Set(parsed.destination_ids)],p_apply_content_defaults:parsed.apply_content_defaults});
     if(error)throw error;if(!data)throw new Error("Package could not be saved.");const savedId=String(data);refresh(savedId);
     return {success:true,data:{id:savedId}};
-  }catch(error){console.error("Save package failed:",error);return {success:false,error:message(error,"Failed to save package.")};}
+  }catch(error){return {success:false,error:message(error,"Failed to save package.")};}
 }
 
 async function saveRow<T extends Record<string,unknown>>(options:{id:string|null;table:string;values:T;permission:PermissionKey;packageId:string;fallback:string}):Promise<Result<{id:string}>>{
   try{await requirePermission(options.permission);const db=await createPackageDatabaseClient();
-    const query=options.id?db.from(options.table).update(options.values as never).eq("id",options.id):db.from(options.table).insert(options.values as never);
+    const query=options.id
+      ? db.from(options.table).update(options.values as never).eq("id",options.id).eq("package_id",options.packageId)
+      : db.from(options.table).insert(options.values as never);
     const {data,error}=await query.select("id").single();if(error)throw error;if(!data?.id)throw new Error("The record could not be saved.");refresh(options.packageId);return {success:true,data:{id:String(data.id)}};
-  }catch(error){console.error(options.fallback,error);return {success:false,error:message(error,options.fallback)};}
+  }catch(error){return {success:false,error:message(error,options.fallback)};}
 }
 
 export async function savePackageDay(id:string|null,values:PackageDayValues):Promise<Result<{id:string}>>{try{const v=packageDaySchema.parse(values);return await saveRow({id,table:"package_itinerary_days",values:v,permission:"packages.update",packageId:v.package_id,fallback:"Failed to save itinerary day."});}catch(e){return{success:false,error:message(e,"Failed to save itinerary day.")};}}
@@ -71,7 +73,6 @@ export async function savePackageActivity(id:string|null,packageId:string,values
     refresh(packageId);
     return{success:true,data:{id:String(data.id)}};
   }catch(e){
-    console.error("Failed to save package activity.",e);
     return{success:false,error:message(e,"Failed to save package activity.")};
   }
 }
@@ -113,7 +114,6 @@ export async function savePackageHotel(id:string|null,packageId:string,values:Pa
     refresh(packageId);
     return{success:true,data:{id:String(data.id)}};
   }catch(e){
-    console.error("Failed to save package hotel.",e);
     return{success:false,error:message(e,"Failed to save package hotel.")};
   }
 }
@@ -168,7 +168,18 @@ export async function savePackageAdjustment(id:string|null,values:PackageAdjustm
 const childTables={day:"package_itinerary_days",activity:"package_day_activities",hotel:"package_day_hotels",vehicle:"package_vehicle_options",content:"package_content_items",faq:"package_faqs",adjustment:"package_price_adjustments"} as const;
 export async function deletePackageChild(kind:keyof typeof childTables,id:string,packageId:string):Promise<Result>{
   try{if(!Object.hasOwn(childTables,kind))throw new Error("Invalid package record type.");await requirePermission(kind==="adjustment"?"packages.manage_pricing":"packages.update");
-    const db=await createPackageDatabaseClient();const {error}=await db.from(childTables[kind]).delete().eq("id",id);if(error)throw error;refresh(packageId);return {success:true};
+    const db=await createPackageDatabaseClient();
+    if(kind==="activity"||kind==="hotel"){
+      const table=childTables[kind];
+      const {data,error}=await db.from(table).select("itinerary_day:package_itinerary_days(package_id)").eq("id",id).maybeSingle();
+      if(error||!data)throw error??new Error("Package item was not found.");
+      const day=data.itinerary_day as unknown as {package_id:string}|null;
+      if(day?.package_id!==packageId)throw new Error("This item does not belong to the selected package.");
+    }else{
+      const {data,error}=await db.from(childTables[kind]).select("id").eq("id",id).eq("package_id",packageId).maybeSingle();
+      if(error||!data)throw error??new Error("Package item was not found.");
+    }
+    const {error}=await db.from(childTables[kind]).delete().eq("id",id);if(error)throw error;refresh(packageId);return {success:true};
   }catch(error){return {success:false,error:message(error,"This item cannot be deleted because it is already in use.")};}
 }
 export async function deletePackage(id:string):Promise<Result>{

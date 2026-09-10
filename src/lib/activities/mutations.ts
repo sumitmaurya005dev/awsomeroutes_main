@@ -91,7 +91,6 @@ export async function createActivity(
     revalidatePath("/home/activities");
     return { success: true, data: { id } };
   } catch (error) {
-    console.error("Create activity error:", error);
     return {
       success: false,
       error: errorMessage(error, "Failed to create activity."),
@@ -111,7 +110,6 @@ export async function updateActivity(
     revalidatePath(`/home/activities/${id}/edit`);
     return { success: true, data: { id } };
   } catch (error) {
-    console.error("Update activity error:", error);
     return {
       success: false,
       error: errorMessage(error, "Failed to update activity."),
@@ -128,7 +126,6 @@ export async function deleteActivity(id: string): Promise<MutationResult> {
     revalidatePath("/home/activities");
     return { success: true };
   } catch (error) {
-    console.error("Delete activity error:", error);
     return {
       success: false,
       error: errorMessage(
@@ -222,7 +219,6 @@ export async function saveOffering(
     revalidateActivityPricingConsumers();
     return { success: true, data: { id: String(data.id) } };
   } catch (error) {
-    console.error("Save activity offering error:", error);
     return {
       success: false,
       error: errorMessage(error, "Failed to save the activity offering."),

@@ -376,11 +376,6 @@ function EditCountryForm({
        */
       router.refresh();
     } catch (error) {
-      console.error(
-        "Update country error:",
-        error
-      );
-
       setError(
         error instanceof Error
           ? error.message

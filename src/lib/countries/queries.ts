@@ -104,7 +104,6 @@ export async function getCountries({
   const { data, error, count } = await query;
 
   if (error) {
-    console.error("Error fetching countries:", error);
     throw new Error("Failed to fetch countries");
   }
 
@@ -136,7 +135,6 @@ export async function getCountryById(
     .maybeSingle();
 
   if (error) {
-    console.error("Error fetching country:", error);
     throw new Error("Failed to fetch country");
   }
 
@@ -158,7 +156,6 @@ export async function getCountryBySlug(
     .maybeSingle();
 
   if (error) {
-    console.error("Error fetching country by slug:", error);
     throw new Error("Failed to fetch country");
   }
 

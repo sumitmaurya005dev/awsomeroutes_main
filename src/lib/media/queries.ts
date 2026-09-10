@@ -85,11 +85,6 @@ export async function getMediaAssets(
   } = await query;
 
   if (error) {
-    console.error(
-      "Failed to fetch media assets:",
-      error
-    );
-
     throw new Error(
       "Failed to load media library."
     );
@@ -140,11 +135,6 @@ export async function getMediaAssetById(
     .maybeSingle();
 
   if (error) {
-    console.error(
-      "Failed to fetch media asset:",
-      error
-    );
-
     throw new Error(
       "Failed to load media asset."
     );
@@ -168,11 +158,6 @@ export async function getMediaFolders() {
     });
 
   if (error) {
-    console.error(
-      "Failed to fetch media folders:",
-      error
-    );
-
     throw new Error(
       "Failed to load media folders."
     );

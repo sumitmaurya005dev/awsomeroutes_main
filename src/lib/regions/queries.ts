@@ -151,10 +151,6 @@ export async function getRegions({
       );
 
     if (countrySearchError) {
-      console.error(
-        "Error searching countries for regions:",
-        countrySearchError
-      );
 
       throw new Error(
         "Failed to search regions"
@@ -284,10 +280,6 @@ query = query.order(
   } = await query;
 
   if (error) {
-    console.error(
-      "Error fetching regions:",
-      error
-    );
 
     throw new Error(
       "Failed to fetch regions"
@@ -343,10 +335,6 @@ export async function getRegionById(
     .maybeSingle();
 
   if (error) {
-    console.error(
-      "Error fetching region:",
-      error
-    );
 
     throw new Error(
       "Failed to fetch region"
@@ -424,10 +412,6 @@ export async function getRegionBySlug(
     .maybeSingle();
 
   if (error) {
-    console.error(
-      "Error fetching region by slug:",
-      error
-    );
 
     throw new Error(
       "Failed to fetch region"

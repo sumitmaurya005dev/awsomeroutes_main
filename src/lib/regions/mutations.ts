@@ -8,6 +8,7 @@ import {
 } from "./validations";
 import { hasPermission } from "@/lib/auth";
 import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
+import { resolveSelectedImage } from "@/lib/media/selection";
 
 /**
  * Create Region
@@ -44,6 +45,12 @@ export async function createRegion(
     image_asset_id,
     status,
   } = parsed.data;
+  let selectedImage;
+  try {
+    selectedImage = await resolveSelectedImage(image_asset_id, image_url);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Selected image is invalid." };
+  }
 
   // ----------------------------------
   // Current user
@@ -72,10 +79,6 @@ export async function createRegion(
       .maybeSingle();
 
   if (countryError) {
-    console.error(
-      "Error checking country:",
-      countryError
-    );
 
     return {
       success: false,
@@ -110,10 +113,6 @@ export async function createRegion(
     .maybeSingle();
 
   if (duplicateError) {
-    console.error(
-      "Error checking duplicate region:",
-      duplicateError
-    );
 
     return {
       success: false,
@@ -145,8 +144,8 @@ export async function createRegion(
       name,
       slug,
       description: description || null,
-      image_url: image_url || null,
-      image_asset_id: image_asset_id || null,
+      image_url: selectedImage.imageUrl,
+      image_asset_id: selectedImage.imageAssetId,
       status,
     })
     .select(
@@ -162,10 +161,6 @@ export async function createRegion(
     .single();
 
   if (error) {
-    console.error(
-      "Error creating region:",
-      error
-    );
 
     // Database unique constraint
     if (error.code === "23505") {
@@ -230,6 +225,12 @@ export async function updateRegion(
     image_asset_id,
     status,
   } = parsed.data;
+  let selectedImage;
+  try {
+    selectedImage = await resolveSelectedImage(image_asset_id, image_url);
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Selected image is invalid." };
+  }
 
   // ----------------------------------
   // Current user
@@ -260,10 +261,6 @@ export async function updateRegion(
     .maybeSingle();
 
   if (regionError) {
-    console.error(
-      "Error checking region:",
-      regionError
-    );
 
     return {
       success: false,
@@ -290,10 +287,6 @@ export async function updateRegion(
       .maybeSingle();
 
   if (countryError) {
-    console.error(
-      "Error checking country:",
-      countryError
-    );
 
     return {
       success: false,
@@ -329,10 +322,6 @@ export async function updateRegion(
     .maybeSingle();
 
   if (duplicateError) {
-    console.error(
-      "Error checking duplicate region:",
-      duplicateError
-    );
 
     return {
       success: false,
@@ -364,8 +353,8 @@ export async function updateRegion(
       name,
       slug,
       description: description || null,
-      image_url: image_url || null,
-      image_asset_id: image_asset_id || null,
+      image_url: selectedImage.imageUrl,
+      image_asset_id: selectedImage.imageAssetId,
       status,
       updated_at: new Date().toISOString(),
     })
@@ -383,10 +372,6 @@ export async function updateRegion(
     .single();
 
   if (error) {
-    console.error(
-      "Error updating region:",
-      error
-    );
 
     // Database unique constraint
     if (error.code === "23505") {
@@ -446,7 +431,6 @@ export async function deleteRegion(
     .eq("region_id", id);
 
   if (dependencyError) {
-    console.error("Error checking region dependencies:", dependencyError);
     return {
       success: false,
       error: "Could not verify whether this region is safe to delete.",
@@ -470,10 +454,6 @@ export async function deleteRegion(
     .eq("id", id);
 
   if (error) {
-    console.error(
-      "Error deleting region:",
-      error
-    );
 
     return {
       success: false,

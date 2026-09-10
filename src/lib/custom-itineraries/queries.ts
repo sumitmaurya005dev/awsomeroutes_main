@@ -85,8 +85,14 @@ export async function getCustomItineraries(
     throw new Error(
       "Could not load custom itineraries. Apply the custom-itinerary migration first.",
     );
+  const rows = (data ?? []) as ItineraryRow[];
   return {
-    data: (data ?? []) as ItineraryRow[],
+    data: rows.map((row) => ({
+      ...row,
+      customer_phone: row.customer_phone
+        ? `${"•".repeat(Math.max(0, row.customer_phone.length - 4))}${row.customer_phone.slice(-4)}`
+        : "",
+    })),
     count: count ?? 0,
     page,
     limit,

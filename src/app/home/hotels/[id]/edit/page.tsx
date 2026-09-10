@@ -36,7 +36,7 @@ export default async function EditHotelPage({
     hasPermission("media.view"),
     hasPermission("media.create"),
   ]);
-  if (!canView && !canCreate && !canUpdate && !canManagePricing) notFound();
+  if (!canView || (!canUpdate && !canManagePricing)) notFound();
   const [hotel, { categories, amenities }] = await Promise.all([
     getHotelById(id),
     getHotelReferenceData(),

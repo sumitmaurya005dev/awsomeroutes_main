@@ -21,7 +21,6 @@ export async function getVehicleAdminData(): Promise<VehicleAdminData> {
   ]);
   const failed = [categories, models, vendors, drivers, fleet, rates].find((result) => result.error);
   if (failed?.error) {
-    console.error("Load vehicle administration failed:", failed.error);
     throw new Error("Failed to load vehicle management data.");
   }
   return {

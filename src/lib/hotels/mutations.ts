@@ -35,9 +35,10 @@ function message(e: unknown, fallback: string) {
     if (databaseError.code === "23503")
       return getDeleteDependencyMessage(databaseError, fallback);
 
-    if (databaseError.message?.trim()) return databaseError.message;
   }
-  return e instanceof Error ? e.message : fallback;
+  return e instanceof Error && e.message.startsWith("You do not have permission")
+    ? e.message
+    : fallback;
 }
 function hotelPayload(v: HotelValues) {
   const { gallery_asset_ids, amenity_ids, ...payload } = v;
@@ -80,7 +81,6 @@ export async function createHotel(
     revalidatePath("/home/hotels");
     return { success: true, data: { id } };
   } catch (e) {
-    console.error(e);
     return { success: false, error: message(e, "Failed to create hotel.") };
   }
 }
@@ -214,7 +214,6 @@ export async function saveHotelRoom(
     revalidatePath(`/home/hotels/${parsed.hotel_id}/edit`);
     return { success: true, data: { id: String(data) } };
   } catch (e) {
-    console.error("Save hotel room failed:", e);
     return { success: false, error: message(e, "Failed to save room.") };
   }
 }
@@ -309,7 +308,6 @@ export async function saveHotelRate(
     revalidatePath(`/home/hotels/${hotelContextId}/edit`);
     return { success: true, data: { id: String(data.id) } };
   } catch (e) {
-    console.error("Save hotel rate failed:", e);
     return { success: false, error: message(e, "Failed to save rate.") };
   }
 }
@@ -386,7 +384,6 @@ export async function saveHotelLocationRate(
     revalidatePath("/home/hotels", "layout");
     return { success: true, data: { id: String(data.id) } };
   } catch (e) {
-    console.error("Save hotel location rate failed:", e);
     return { success: false, error: message(e, "Failed to save location rate.") };
   }
 }

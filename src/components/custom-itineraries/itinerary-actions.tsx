@@ -6,6 +6,7 @@ import {
   finalizeCustomItinerary,
   changeCustomItineraryStatus,
   deleteCustomItinerary,
+  anonymizeCustomItineraryCustomer,
 } from "@/lib/custom-itineraries/actions";
 import type {
   ItineraryDetail,
@@ -25,6 +26,13 @@ export function ItineraryActions({
     router = useRouter();
   function run(action: string) {
     if (
+      action === "anonymize" &&
+      window.prompt(
+        "This permanently removes customer identity, dates, notes and itinerary details from every revision. Type ANONYMIZE to continue.",
+      ) !== "ANONYMIZE"
+    ) return;
+    if (
+      action !== "anonymize" &&
       !window.confirm(
         action === "finalize"
           ? "Finalize the last SAVED draft with current catalog prices? Unsaved form changes are NOT included. This locks a permanent quotation revision."
@@ -44,6 +52,8 @@ export function ItineraryActions({
             ? await finalizeCustomItinerary(v.id, v.version)
             : action === "delete"
               ? await deleteCustomItinerary(v.id, v.version)
+              : action === "anonymize"
+                ? await anonymizeCustomItineraryCustomer(v.id, v.version)
               : await changeCustomItineraryStatus(v.id, v.version, action);
         if (!r.success) {
           setError(r.error);
@@ -111,6 +121,16 @@ export function ItineraryActions({
               Mark {s}
             </Button>
           ))}
+        {p.delete && v.customer_name !== "Deleted customer" && (
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={pending || blocked}
+            onClick={() => run("anonymize")}
+          >
+            Anonymize customer data
+          </Button>
+        )}
       </div>
       {blocked && (
         <p className="text-sm text-muted-foreground">

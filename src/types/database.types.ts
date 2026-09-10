@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -646,6 +646,550 @@ export type Database = {
             columns: ["image_asset_id"]
             isOneToOne: false
             referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itineraries: {
+        Row: {
+          adults: number
+          advance_paise: number
+          children: number
+          created_at: string
+          created_by: string | null
+          current_revision: number
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          discount_paise: number
+          id: string
+          infants: number
+          internal_notes: string
+          luggage_count: number
+          markup_bps: number
+          public_notes: string
+          quote_number: number
+          search_document: unknown
+          show_activity_cost: boolean
+          show_hotel_cost: boolean
+          show_vehicle_cost: boolean
+          source_package_id: string | null
+          status: string
+          terms: string
+          title: string
+          total_override_paise: number | null
+          total_override_reason: string
+          travel_date: string | null
+          updated_at: string
+          updated_by: string | null
+          valid_until: string | null
+          version: number
+        }
+        Insert: {
+          adults: number
+          advance_paise?: number
+          children?: number
+          created_at?: string
+          created_by?: string | null
+          current_revision?: number
+          customer_email?: string
+          customer_name: string
+          customer_phone?: string
+          discount_paise?: number
+          id?: string
+          infants?: number
+          internal_notes?: string
+          luggage_count?: number
+          markup_bps?: number
+          public_notes?: string
+          quote_number?: never
+          search_document?: unknown
+          show_activity_cost?: boolean
+          show_hotel_cost?: boolean
+          show_vehicle_cost?: boolean
+          source_package_id?: string | null
+          status?: string
+          terms?: string
+          title: string
+          total_override_paise?: number | null
+          total_override_reason?: string
+          travel_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valid_until?: string | null
+          version?: number
+        }
+        Update: {
+          adults?: number
+          advance_paise?: number
+          children?: number
+          created_at?: string
+          created_by?: string | null
+          current_revision?: number
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          discount_paise?: number
+          id?: string
+          infants?: number
+          internal_notes?: string
+          luggage_count?: number
+          markup_bps?: number
+          public_notes?: string
+          quote_number?: never
+          search_document?: unknown
+          show_activity_cost?: boolean
+          show_hotel_cost?: boolean
+          show_vehicle_cost?: boolean
+          source_package_id?: string | null
+          status?: string
+          terms?: string
+          title?: string
+          total_override_paise?: number | null
+          total_override_reason?: string
+          travel_date?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          valid_until?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itineraries_source_package_id_fkey"
+            columns: ["source_package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itinerary_activities: {
+        Row: {
+          adults: number
+          children: number
+          day_id: string
+          id: string
+          infants: number
+          offering_id: string
+          optional: boolean
+          override_reason: string
+          override_total_paise: number | null
+          quantity: number
+          units: number | null
+          variant_id: string | null
+        }
+        Insert: {
+          adults: number
+          children: number
+          day_id: string
+          id: string
+          infants: number
+          offering_id: string
+          optional?: boolean
+          override_reason?: string
+          override_total_paise?: number | null
+          quantity: number
+          units?: number | null
+          variant_id?: string | null
+        }
+        Update: {
+          adults?: number
+          children?: number
+          day_id?: string
+          id?: string
+          infants?: number
+          offering_id?: string
+          optional?: boolean
+          override_reason?: string
+          override_total_paise?: number | null
+          quantity?: number
+          units?: number | null
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itinerary_activities_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "custom_itinerary_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_activities_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "activity_offerings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_activities_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "activity_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itinerary_activity_charges: {
+        Row: {
+          activity_id: string
+          charge_id: string
+        }
+        Insert: {
+          activity_id: string
+          charge_id: string
+        }
+        Update: {
+          activity_id?: string
+          charge_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itinerary_activity_charges_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "custom_itinerary_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_activity_charges_charge_id_fkey"
+            columns: ["charge_id"]
+            isOneToOne: false
+            referencedRelation: "activity_charges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itinerary_days: {
+        Row: {
+          breakfast: boolean
+          day_number: number
+          description: string
+          dinner: boolean
+          distance_km: number | null
+          end_location_id: string | null
+          id: string
+          itinerary_id: string
+          lunch: boolean
+          overnight_location_id: string | null
+          start_location_id: string | null
+          title: string
+          travel_minutes: number | null
+        }
+        Insert: {
+          breakfast: boolean
+          day_number: number
+          description?: string
+          dinner: boolean
+          distance_km?: number | null
+          end_location_id?: string | null
+          id: string
+          itinerary_id: string
+          lunch: boolean
+          overnight_location_id?: string | null
+          start_location_id?: string | null
+          title: string
+          travel_minutes?: number | null
+        }
+        Update: {
+          breakfast?: boolean
+          day_number?: number
+          description?: string
+          dinner?: boolean
+          distance_km?: number | null
+          end_location_id?: string | null
+          id?: string
+          itinerary_id?: string
+          lunch?: boolean
+          overnight_location_id?: string | null
+          start_location_id?: string | null
+          title?: string
+          travel_minutes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itinerary_days_end_location_id_fkey"
+            columns: ["end_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_days_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "custom_itineraries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_days_overnight_location_id_fkey"
+            columns: ["overnight_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_days_start_location_id_fkey"
+            columns: ["start_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itinerary_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: number
+          itinerary_id: string
+          version: number
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          itinerary_id: string
+          version: number
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          itinerary_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itinerary_events_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "custom_itineraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itinerary_revisions: {
+        Row: {
+          calculation: Json
+          created_at: string
+          created_by: string | null
+          document: Json
+          id: string
+          itinerary_id: string
+          revision: number
+          source_snapshot: Json
+        }
+        Insert: {
+          calculation: Json
+          created_at?: string
+          created_by?: string | null
+          document: Json
+          id?: string
+          itinerary_id: string
+          revision: number
+          source_snapshot: Json
+        }
+        Update: {
+          calculation?: Json
+          created_at?: string
+          created_by?: string | null
+          document?: Json
+          id?: string
+          itinerary_id?: string
+          revision?: number
+          source_snapshot?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itinerary_revisions_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "custom_itineraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itinerary_stays: {
+        Row: {
+          adults: number
+          category_id: string
+          children_with_bed: number
+          children_without_bed: number
+          day_id: string
+          extra_adult_beds: number
+          hotel_id: string
+          id: string
+          infants: number
+          meal_plan: string
+          override_reason: string
+          override_total_paise: number | null
+          room_id: string | null
+          rooms: number
+        }
+        Insert: {
+          adults: number
+          category_id: string
+          children_with_bed: number
+          children_without_bed: number
+          day_id: string
+          extra_adult_beds: number
+          hotel_id: string
+          id: string
+          infants: number
+          meal_plan: string
+          override_reason?: string
+          override_total_paise?: number | null
+          room_id?: string | null
+          rooms: number
+        }
+        Update: {
+          adults?: number
+          category_id?: string
+          children_with_bed?: number
+          children_without_bed?: number
+          day_id?: string
+          extra_adult_beds?: number
+          hotel_id?: string
+          id?: string
+          infants?: number
+          meal_plan?: string
+          override_reason?: string
+          override_total_paise?: number | null
+          room_id?: string | null
+          rooms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itinerary_stays_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_stays_day_id_fkey"
+            columns: ["day_id"]
+            isOneToOne: false
+            referencedRelation: "custom_itinerary_days"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_stays_hotel_id_fkey"
+            columns: ["hotel_id"]
+            isOneToOne: false
+            referencedRelation: "hotels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_stays_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hotel_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_itinerary_transport: {
+        Row: {
+          base_location_id: string
+          category_id: string
+          driver_id: string | null
+          end_day: number
+          fleet_id: string | null
+          id: string
+          itinerary_id: string
+          luggage_only: boolean
+          model_id: string | null
+          override_reason: string
+          override_total_paise: number | null
+          quantity: number
+          start_day: number
+          vendor_id: string | null
+        }
+        Insert: {
+          base_location_id: string
+          category_id: string
+          driver_id?: string | null
+          end_day: number
+          fleet_id?: string | null
+          id: string
+          itinerary_id: string
+          luggage_only?: boolean
+          model_id?: string | null
+          override_reason?: string
+          override_total_paise?: number | null
+          quantity: number
+          start_day: number
+          vendor_id?: string | null
+        }
+        Update: {
+          base_location_id?: string
+          category_id?: string
+          driver_id?: string | null
+          end_day?: number
+          fleet_id?: string | null
+          id?: string
+          itinerary_id?: string
+          luggage_only?: boolean
+          model_id?: string | null
+          override_reason?: string
+          override_total_paise?: number | null
+          quantity?: number
+          start_day?: number
+          vendor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_itinerary_transport_base_location_id_fkey"
+            columns: ["base_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_transport_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_transport_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_transport_fleet_id_fkey"
+            columns: ["fleet_id"]
+            isOneToOne: false
+            referencedRelation: "fleet_vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_transport_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "custom_itineraries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_transport_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_itinerary_transport_vendor_id_fkey"
+            columns: ["vendor_id"]
+            isOneToOne: false
+            referencedRelation: "transport_vendors"
             referencedColumns: ["id"]
           },
         ]
@@ -1413,6 +1957,30 @@ export type Database = {
           blocked_until?: string | null
           failure_count?: number
           fingerprint?: string
+          updated_at?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
+      feature_rate_limits: {
+        Row: {
+          fingerprint: string
+          request_count: number
+          scope: string
+          updated_at: string
+          window_started_at: string
+        }
+        Insert: {
+          fingerprint: string
+          request_count?: number
+          scope: string
+          updated_at?: string
+          window_started_at?: string
+        }
+        Update: {
+          fingerprint?: string
+          request_count?: number
+          scope?: string
           updated_at?: string
           window_started_at?: string
         }
@@ -2333,6 +2901,27 @@ export type Database = {
           },
         ]
       }
+      revoked_auth_sessions: {
+        Row: {
+          expires_at: string
+          revoked_at: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          revoked_at?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          revoked_at?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       regions: {
         Row: {
           country_id: string
@@ -2677,13 +3266,50 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      anonymize_custom_itinerary_customer: {
+        Args: { p_actor: string; p_id: string; p_version: number }
+        Returns: undefined
+      }
+      consume_feature_rate_limit: {
+        Args: {
+          p_fingerprint: string
+          p_limit: number
+          p_scope: string
+          p_window_seconds: number
+        }
+        Returns: Json
+      }
       current_profile_role_id: { Args: never; Returns: string }
+      custom_itinerary_actor_can: {
+        Args: { p_actor: string; p_permission: string }
+        Returns: boolean
+      }
+      custom_itinerary_can_read: { Args: never; Returns: boolean }
+      delete_custom_itinerary: {
+        Args: { p_actor: string; p_id: string; p_version: number }
+        Returns: undefined
+      }
+      finalize_custom_itinerary: {
+        Args: {
+          p_actor: string
+          p_calculation: Json
+          p_document: Json
+          p_id: string
+          p_source: Json
+          p_version: number
+        }
+        Returns: number
+      }
       get_login_block_seconds: {
         Args: { p_fingerprint: string }
         Returns: number
       }
       has_permission: {
         Args: { required_permission: string }
+        Returns: boolean
+      }
+      is_auth_session_revoked: {
+        Args: { p_session_id: string }
         Returns: boolean
       }
       rebuild_package_generated_content: {
@@ -2700,6 +3326,10 @@ export type Database = {
           p_activity_id: string
           p_gallery_asset_ids: string[]
         }
+        Returns: string
+      }
+      save_custom_itinerary: {
+        Args: { p_actor: string; p_input: Json }
         Returns: string
       }
       save_hotel_room_with_gallery: {
@@ -2764,6 +3394,15 @@ export type Database = {
         Args: { p_package_id: string; p_replace?: boolean }
         Returns: number
       }
+      transition_custom_itinerary: {
+        Args: {
+          p_actor: string
+          p_id: string
+          p_status: string
+          p_version: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -2782,12 +3421,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2811,11 +3450,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2836,11 +3475,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2861,11 +3500,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -2878,11 +3517,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

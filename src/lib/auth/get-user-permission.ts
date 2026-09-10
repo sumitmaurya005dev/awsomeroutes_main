@@ -33,7 +33,6 @@ export async function getUserPermissions(): Promise<PermissionKey[]> {
 
 
   if (error || !data) {
-    console.error("Error fetching permissions:", error);
     return [];
   }
 

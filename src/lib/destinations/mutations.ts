@@ -4,16 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { destinationSchema, type DestinationFormValues } from "./validations";
 import { hasPermission } from "@/lib/auth";
 import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
+import { resolveSelectedImage } from "@/lib/media/selection";
 
 async function validateRegionAndAsset(values: DestinationFormValues) {
   const supabase = await createClient();
   const { data: region } = await supabase.from("regions").select("id").eq("id", values.region_id).eq("status", "active").maybeSingle();
   if (!region) return { supabase, error: "Selected active region does not exist." };
-  if (values.image_asset_id) {
-    const { data: asset } = await supabase.from("media_assets").select("id").eq("id", values.image_asset_id).eq("status", "active").maybeSingle();
-    if (!asset) return { supabase, error: "Selected image does not exist or is archived." };
+  try {
+    return { supabase, image: await resolveSelectedImage(values.image_asset_id, values.image_url) };
+  } catch (error) {
+    return { supabase, error: error instanceof Error ? error.message : "Selected image is invalid." };
   }
-  return { supabase };
 }
 
 export async function createDestination(values: DestinationFormValues) {
@@ -22,8 +23,8 @@ export async function createDestination(values: DestinationFormValues) {
   if (!parsed.success) return { success: false as const, error: "Please check the form fields.", fieldErrors: parsed.error.flatten().fieldErrors };
   const valid = await validateRegionAndAsset(parsed.data);
   if (valid.error) return { success: false as const, error: valid.error };
-  const { data, error } = await valid.supabase.from("destinations").insert({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, image_url: parsed.data.image_url || null, image_asset_id: parsed.data.image_asset_id || null }).select().single();
-  if (error) return { success: false as const, error: error.code === "23505" ? "A destination with this slug already exists in this region." : error.message };
+  const { data, error } = await valid.supabase.from("destinations").insert({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, image_url: valid.image!.imageUrl, image_asset_id: valid.image!.imageAssetId }).select().single();
+  if (error) return { success: false as const, error: error.code === "23505" ? "A destination with this slug already exists in this region." : "Destination could not be created." };
   return { success: true as const, data };
 }
 
@@ -33,8 +34,8 @@ export async function updateDestination(id: string, values: DestinationFormValue
   if (!parsed.success) return { success: false as const, error: "Please check the form fields.", fieldErrors: parsed.error.flatten().fieldErrors };
   const valid = await validateRegionAndAsset(parsed.data);
   if (valid.error) return { success: false as const, error: valid.error };
-  const { data, error } = await valid.supabase.from("destinations").update({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, image_url: parsed.data.image_url || null, image_asset_id: parsed.data.image_asset_id || null, updated_at: new Date().toISOString() }).eq("id", id).select().single();
-  if (error) return { success: false as const, error: error.code === "23505" ? "A destination with this slug already exists in this region." : error.message };
+  const { data, error } = await valid.supabase.from("destinations").update({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, image_url: valid.image!.imageUrl, image_asset_id: valid.image!.imageAssetId, updated_at: new Date().toISOString() }).eq("id", id).select().single();
+  if (error) return { success: false as const, error: error.code === "23505" ? "A destination with this slug already exists in this region." : "Destination could not be updated." };
   return { success: true as const, data };
 }
 
@@ -50,7 +51,6 @@ export async function deleteDestination(id: string) {
     .eq("destination_id", id);
 
   if (dependencyError) {
-    console.error("Error checking destination dependencies:", dependencyError);
     return { success: false as const, error: "Could not verify whether this destination is safe to delete." };
   }
 
@@ -63,7 +63,6 @@ export async function deleteDestination(id: string) {
 
   const { error } = await supabase.from("destinations").delete().eq("id", id);
   if (error) {
-    console.error("Error deleting destination:", error);
     return { success: false as const, error: getDeleteDependencyMessage(error, "Failed to delete destination.") };
   }
 

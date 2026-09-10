@@ -1,10 +1,14 @@
-import { Buffer } from "node:buffer";
 import { NextRequest, NextResponse } from "next/server";
 
 import { MEDIA_FOLDERS, isMediaLibraryFolder } from "@/config/media";
 import type { PermissionKey } from "@/config/permissions";
 import { getCurrentUser, hasPermission } from "@/lib/auth";
 import { detectImageMime } from "@/lib/media/file-validation";
+import { sanitizeImageForUpload } from "@/lib/media/sanitize-image";
+import { deleteImageKitFile } from "@/lib/imagekit/server";
+import { logServerError } from "@/lib/security/log-server-error";
+import { getCorrelationId } from "@/lib/security/request-security";
+import { consumeFeatureRateLimit } from "@/lib/security/feature-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -48,15 +52,8 @@ function safePrefix(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "image";
 }
 
-async function deleteImageKitFile(fileId: string, privateKey: string) {
-  const response = await fetch(`https://api.imagekit.io/v1/files/${encodeURIComponent(fileId)}`, {
-    method: "DELETE",
-    headers: { Authorization: `Basic ${Buffer.from(`${privateKey}:`).toString("base64")}` },
-  });
-  if (!response.ok && response.status !== 404) console.error("ImageKit cleanup failed:", response.status);
-}
-
 export async function POST(request: NextRequest) {
+  const correlationId = getCorrelationId(request);
   try {
     const [user, canUpload] = await Promise.all([getCurrentUser(), hasPermission("media.create")]);
     if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -105,23 +102,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-    const { count, error: quotaError } = await supabase
-      .from("media_assets")
-      .select("id", { count: "exact", head: true })
-      .eq("uploaded_by", user.id)
-      .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString());
-    if (quotaError) return NextResponse.json({ error: "Could not verify upload quota." }, { status: 503 });
-    if ((count ?? 0) >= MAX_UPLOADS_PER_HOUR) {
-      return NextResponse.json({ error: "Hourly upload limit reached. Please try again later." }, { status: 429 });
+    const quota = await consumeFeatureRateLimit({
+      scope: "media-upload",
+      subject: user.id,
+      limit: MAX_UPLOADS_PER_HOUR,
+      windowSeconds: 60 * 60,
+    });
+    if (!quota.allowed) {
+      return NextResponse.json(
+        { error: "Hourly upload limit reached. Please try again later." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(quota.retryAfterSeconds) },
+        },
+      );
     }
+
+    const supabase = await createClient();
 
     const privateKey = process.env.IMAGEKIT_PRIVATE_KEY;
     if (!privateKey) return NextResponse.json({ error: "Image upload is not configured." }, { status: 500 });
 
+    const sanitizedImage = await sanitizeImageForUpload(file, detectedMime);
+    if (sanitizedImage.byteLength > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: "The sanitized image is too large. Use a smaller image." },
+        { status: 400 },
+      );
+    }
     const imageKitForm = new FormData();
-    imageKitForm.append("file", file);
-    imageKitForm.append("fileName", `${safePrefix(typeof prefix === "string" ? prefix : file.name)}-${Date.now()}.${extensionFor(file)}`);
+    imageKitForm.append("file", new Blob([sanitizedImage], { type: detectedMime }));
+    imageKitForm.append("fileName", `${safePrefix(typeof prefix === "string" ? prefix : "image")}-${crypto.randomUUID()}.${extensionFor(file)}`);
     imageKitForm.append("folder", folder);
     imageKitForm.append("useUniqueFileName", "true");
 
@@ -139,10 +150,10 @@ export async function POST(request: NextRequest) {
       // ImageKit can occasionally return an empty/non-JSON gateway response.
     }
     if (!uploadResponse.ok || !uploaded.fileId || !uploaded.url || !uploaded.filePath || !uploaded.name) {
-      return NextResponse.json({ error: uploaded.message ?? "ImageKit upload failed." }, { status: 502 });
+      return NextResponse.json({ error: "Image provider upload failed." }, { status: 502 });
     }
     if (!uploaded.filePath.startsWith(`${folder}/`)) {
-      await deleteImageKitFile(uploaded.fileId, privateKey);
+      await deleteImageKitFile(uploaded.fileId);
       return NextResponse.json({ error: "ImageKit returned an unexpected file path." }, { status: 502 });
     }
     if (
@@ -150,7 +161,7 @@ export async function POST(request: NextRequest) {
       uploaded.height &&
       uploaded.width * uploaded.height > MAX_IMAGE_PIXELS
     ) {
-      await deleteImageKitFile(uploaded.fileId, privateKey);
+      await deleteImageKitFile(uploaded.fileId);
       return NextResponse.json(
         { error: "Image dimensions are too large. Use an image below 40 megapixels." },
         { status: 400 },
@@ -162,7 +173,9 @@ export async function POST(request: NextRequest) {
       original_url: uploaded.url,
       file_path: uploaded.filePath,
       file_name: uploaded.name,
-      original_file_name: file.name.slice(0, 255),
+      // Browser filenames can contain a person's name or local naming details;
+      // they are not needed after upload and are deliberately not retained.
+      original_file_name: null,
       media_type: "image",
       mime_type: file.type,
       size_bytes: uploaded.size ?? file.size,
@@ -173,16 +186,16 @@ export async function POST(request: NextRequest) {
       tags: [],
       is_public: true,
       uploaded_by: user.id,
-    }).select("id,imagekit_file_id,original_url,file_path,file_name,mime_type,size_bytes,width,height,folder,alt_text").single();
+    }).select("id,original_url,file_name,width,height,folder,alt_text").single();
 
     if (assetError || !asset) {
-      await deleteImageKitFile(uploaded.fileId, privateKey);
+      await deleteImageKitFile(uploaded.fileId);
       return NextResponse.json({ error: "Image was uploaded but could not be saved. The upload was rolled back." }, { status: 500 });
     }
 
     return NextResponse.json({ data: asset }, { status: 201 });
   } catch (error) {
-    console.error("Secure media upload error:", error);
+    logServerError("Secure media upload failed.", error, correlationId);
     return NextResponse.json({ error: "Image upload failed. Please try again." }, { status: 500 });
   }
 }

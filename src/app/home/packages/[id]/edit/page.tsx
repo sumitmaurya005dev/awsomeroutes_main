@@ -40,7 +40,7 @@ export default async function EditPackagePage({
     hasPermission("media.create"),
   ]);
 
-  if (!canView && !canUpdate && !canManagePricing && !canPublish) notFound();
+  if (!canView || (!canUpdate && !canManagePricing && !canPublish)) notFound();
 
   const [pkg, refs] = await Promise.all([
     getPackageById(id),

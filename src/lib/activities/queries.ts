@@ -39,7 +39,6 @@ export async function getActivities(filters: ActivityFilters = {}) {
 
   const { data, error, count } = await query;
   if (error) {
-    console.error("Failed to load activities:", error);
     throw new Error("Failed to load activities.");
   }
 
@@ -99,7 +98,6 @@ export async function getActivityById(
     .maybeSingle();
 
   if (error) {
-    console.error("Failed to load activity:", error);
     throw new Error("Failed to load activity.");
   }
   if (!data) return null;

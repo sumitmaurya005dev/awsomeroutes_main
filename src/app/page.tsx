@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { LockKeyhole, Mail, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -23,7 +22,9 @@ export default function PortalLoginPage() {
       const response = await login(formData);
 
       if (response && response.error) {
-        setErrorMessage(response.error);
+        setErrorMessage(
+          `${response.error} Reference: ${response.correlationId}`,
+        );
       } else {
         // Force routing cleanly on successful login
         router.push("/home");
@@ -94,7 +95,7 @@ export default function PortalLoginPage() {
                       type="email"
                       name="email"
                       required
-                      placeholder="admin@awesomeroutes.com"
+                      placeholder="name@company.com"
                       className="h-12 w-full rounded-lg border border-input bg-background pl-11 pr-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30"
                     />
                   </div>
@@ -113,14 +114,6 @@ export default function PortalLoginPage() {
                       className="h-12 w-full rounded-lg border border-input bg-background pl-11 pr-4 outline-none transition focus:border-primary focus:ring-2 focus:ring-ring/30"
                     />
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" className="rounded border-border" />
-                    Remember me
-                  </label>
-                  <Link href="#" className="text-primary hover:underline">Forgot Password?</Link>
                 </div>
 
                 <button

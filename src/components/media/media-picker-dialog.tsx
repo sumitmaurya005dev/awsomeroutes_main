@@ -9,9 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { MEDIA_FOLDERS, type MediaAsset, type MediaFolder, uploadImageToImageKit } from "@/lib/imagekit/upload-client";
 
-type PickerAsset = Pick<MediaAsset, "id" | "original_url" | "file_name" | "folder" | "alt_text" | "width" | "height"> & {
-  original_file_name?: string | null;
-};
+type PickerAsset = Pick<MediaAsset, "id" | "original_url" | "file_name" | "folder" | "alt_text" | "width" | "height">;
 
 type MediaPickerResponse = {
   data?: PickerAsset[];
@@ -136,7 +134,7 @@ export function MediaPickerDialog({
             {assets.map((asset) => (
               <button key={asset.id} type="button" onClick={() => { onSelect(asset); onOpenChange(false); }} className="group overflow-hidden rounded-xl border border-border text-left transition hover:border-primary hover:ring-2 hover:ring-primary/20">
                 <Image src={asset.original_url} alt={asset.alt_text ?? asset.file_name} width={360} height={220} unoptimized className="h-28 w-full object-cover" />
-                <div className="space-y-1 p-2"><p className="truncate text-xs font-medium">{asset.original_file_name ?? asset.file_name}</p><p className="truncate text-[11px] text-muted-foreground">{asset.folder.replace("/awesomeroutes/", "")}</p></div>
+                <div className="space-y-1 p-2"><p className="truncate text-xs font-medium">{asset.file_name}</p><p className="truncate text-[11px] text-muted-foreground">{asset.folder.replace("/awesomeroutes/", "")}</p></div>
               </button>
             ))}
           </div>

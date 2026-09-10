@@ -6,16 +6,17 @@ import { createClient } from "@/lib/supabase/server";
 import { locationSchema, type LocationFormValues } from "./validations";
 import { hasPermission } from "@/lib/auth";
 import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
+import { resolveSelectedImage } from "@/lib/media/selection";
 
 async function validateDestinationAndAsset(values: LocationFormValues) {
   const supabase = await createClient();
   const { data: destination } = await supabase.from("destinations").select("id").eq("id", values.destination_id).eq("status", "active").maybeSingle();
   if (!destination) return { supabase, error: "Selected active destination does not exist." };
-  if (values.image_asset_id) {
-    const { data: asset } = await supabase.from("media_assets").select("id").eq("id", values.image_asset_id).eq("status", "active").maybeSingle();
-    if (!asset) return { supabase, error: "Selected image does not exist or is archived." };
+  try {
+    return { supabase, image: await resolveSelectedImage(values.image_asset_id, values.image_url) };
+  } catch (error) {
+    return { supabase, error: error instanceof Error ? error.message : "Selected image is invalid." };
   }
-  return { supabase };
 }
 
 export async function createLocation(values: LocationFormValues) {
@@ -24,8 +25,8 @@ export async function createLocation(values: LocationFormValues) {
   if (!parsed.success) return { success: false as const, error: "Please check the form fields." };
   const valid = await validateDestinationAndAsset(parsed.data);
   if (valid.error) return { success: false as const, error: valid.error };
-  const { data, error } = await valid.supabase.from("locations").insert({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, address: parsed.data.address || null, image_url: parsed.data.image_url || null, image_asset_id: parsed.data.image_asset_id || null, parent_location_id: null }).select().single();
-  if (error) return { success: false as const, error: error.code === "23505" ? "A location with this slug already exists in this destination." : error.message };
+  const { data, error } = await valid.supabase.from("locations").insert({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, address: parsed.data.address || null, image_url: valid.image!.imageUrl, image_asset_id: valid.image!.imageAssetId, parent_location_id: null }).select().single();
+  if (error) return { success: false as const, error: error.code === "23505" ? "A location with this slug already exists in this destination." : "Location could not be created." };
   return { success: true as const, data };
 }
 
@@ -35,8 +36,8 @@ export async function updateLocation(id: string, values: LocationFormValues) {
   if (!parsed.success) return { success: false as const, error: "Please check the form fields." };
   const valid = await validateDestinationAndAsset(parsed.data);
   if (valid.error) return { success: false as const, error: valid.error };
-  const { data, error } = await valid.supabase.from("locations").update({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, address: parsed.data.address || null, image_url: parsed.data.image_url || null, image_asset_id: parsed.data.image_asset_id || null, updated_at: new Date().toISOString() }).eq("id", id).select().single();
-  if (error) return { success: false as const, error: error.code === "23505" ? "A location with this slug already exists in this destination." : error.message };
+  const { data, error } = await valid.supabase.from("locations").update({ ...parsed.data, short_description: parsed.data.short_description || null, description: parsed.data.description || null, address: parsed.data.address || null, image_url: valid.image!.imageUrl, image_asset_id: valid.image!.imageAssetId, updated_at: new Date().toISOString() }).eq("id", id).select().single();
+  if (error) return { success: false as const, error: error.code === "23505" ? "A location with this slug already exists in this destination." : "Location could not be updated." };
   return { success: true as const, data };
 }
 
@@ -57,7 +58,6 @@ export async function deleteLocation(id: string) {
     .eq("parent_location_id", parsedId.data);
 
   if (dependencyError) {
-    console.error("Error checking location dependencies:", dependencyError);
     return { success: false as const, error: "Could not verify whether this location is safe to delete." };
   }
 
@@ -75,7 +75,6 @@ export async function deleteLocation(id: string) {
     .select("id")
     .maybeSingle();
   if (error) {
-    console.error("Error deleting location:", error);
     return { success: false as const, error: getDeleteDependencyMessage(error, "Failed to delete location.") };
   }
 

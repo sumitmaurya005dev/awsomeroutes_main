@@ -17,29 +17,6 @@ export const superAdminNavigation: SidebarItem[] = [
     ],
   },
 
-  // Later implementation
-  //  {
-  //   title: "Bookings",
-  //   icon: "clipboard",
-  //   permission: "packages.view",
-
-  //   children: [
-  //     {
-  //       title: "All Bookings",
-  //       href: "/dashboard/packages",
-  //       icon: "list",
-  //       permission: "bookings.view",
-  //     },
-
-  //     {
-  //       title: "New Booking",
-  //       href: "/dashboard/packages/create",
-  //       icon: "plus",
-  //       permission: "bookings.create",
-  //     },
-  //   ],
-  // },
-
   {
     title: "Packages",
     icon: "package",

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { isMediaLibraryFolder } from "@/config/media";
 import { hasPermission } from "@/lib/auth";
+import { logServerError } from "@/lib/security/log-server-error";
+import { getCorrelationId } from "@/lib/security/request-security";
 import { createClient } from "@/lib/supabase/server";
 
 function positiveInteger(value: string | null, fallback: number, maximum: number) {
@@ -10,6 +12,7 @@ function positiveInteger(value: string | null, fallback: number, maximum: number
 }
 
 export async function GET(request: NextRequest) {
+  const correlationId = getCorrelationId(request);
   try {
     if (!(await hasPermission("media.view"))) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest) {
     const from = (page - 1) * pageSize;
     let query = supabase
       .from("media_assets")
-      .select("id,original_url,file_name,original_file_name,folder,alt_text,width,height,created_at", { count: "exact" })
+      .select("id,original_url,file_name,folder,alt_text,width,height", { count: "exact" })
       .eq("status", "active")
       .eq("media_type", "image")
       .neq("folder", "/awesomeroutes/profiles")
@@ -42,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ data: data ?? [], count: count ?? 0, page, pageSize });
   } catch (error) {
-    console.error("Fetch media assets error:", error);
+    logServerError("Fetch media assets failed.", error, correlationId);
     return NextResponse.json({ error: "Failed to load Media Library." }, { status: 500 });
   }
 }

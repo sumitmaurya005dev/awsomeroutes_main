@@ -41,7 +41,6 @@ export async function createCountryAction(
       data: country,
     };
   } catch (error) {
-    console.error("Create country error:", error);
 
     return {
       success: false as const,
@@ -77,7 +76,6 @@ export async function updateCountryAction(
       message: "Updated successfully",
     };
   } catch (error) {
-    console.error("Update country error:", error);
 
     return {
       success: false as const,
@@ -98,7 +96,6 @@ export async function deleteCountryAction(id: string) {
       success: true as const,
     };
   } catch (error) {
-    console.error("Delete country error:", error);
 
     return {
       success: false as const,
@@ -123,7 +120,6 @@ export async function updateCountryStatusAction(
       data: country,
     };
   } catch (error) {
-    console.error("Update country status error:", error);
 
     return {
       success: false as const,

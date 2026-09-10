@@ -57,7 +57,6 @@ export async function getHotelLocationRates(filters: {
 
   const { data, error, count } = await query;
   if (error) {
-    console.error("Load hotel location rates failed:", error);
     throw new Error("Failed to load location pricing.");
   }
   return {
@@ -121,7 +120,6 @@ export async function getHotels(
   }
   const { data, error, count } = await query;
   if (error) {
-    console.error("Load hotels failed:", error);
     throw new Error("Failed to load hotels.");
   }
   const rows = (data ?? []) as unknown as Array<
@@ -173,7 +171,6 @@ export async function getHotelById(id: string): Promise<HotelDetail | null> {
     .eq("id", id)
     .maybeSingle();
   if (error) {
-    console.error("Load hotel failed:", error);
     throw new Error("Failed to load hotel.");
   }
   if (!data) return null;

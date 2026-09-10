@@ -44,6 +44,15 @@ test("real PostgreSQL migration: transactions, RBAC, concurrency, revisions and 
         "utf8",
       ),
     );
+    await db.exec(
+      await readFile(
+        new URL(
+          "../supabase/migrations/20260906100000_account_deletion_privacy.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
     for (const [id, role, status] of [
       [admin, adminRole, "active"],
       [viewer, viewRole, "active"],
@@ -262,6 +271,48 @@ test("real PostgreSQL migration: transactions, RBAC, concurrency, revisions and 
     await assert.rejects(
       db.query("select delete_custom_itinerary($1,$2,7)", [admin, value.id]),
       /never-finalized/,
+    );
+    await db.query(
+      "select anonymize_custom_itinerary_customer($1,$2,7)",
+      [admin, value.id],
+    );
+    const anonymized = (
+      await db.query(
+        "select customer_name,customer_email,customer_phone,travel_date,public_notes,internal_notes,terms,version from custom_itineraries where id=$1",
+        [value.id],
+      )
+    ).rows[0];
+    assert.deepEqual(anonymized, {
+      customer_name: "Deleted customer",
+      customer_email: "",
+      customer_phone: "",
+      travel_date: null,
+      public_notes: "",
+      internal_notes: "",
+      terms: "",
+      version: 8,
+    });
+    const erasedSnapshots = (
+      await db.query(
+        "select document,calculation,source_snapshot from custom_itinerary_revisions where itinerary_id=$1",
+        [value.id],
+      )
+    ).rows;
+    assert.equal(erasedSnapshots.length, 2);
+    for (const revision of erasedSnapshots) {
+      assert.equal(revision.document.anonymized, true);
+      assert.equal(revision.calculation.anonymized, true);
+      assert.deepEqual(revision.source_snapshot, { anonymized: true });
+      assert.equal("customer_name" in revision.document, false);
+    }
+    assert.equal(
+      (
+        await db.query(
+          "select count(*)::int as n from custom_itinerary_days where itinerary_id=$1",
+          [value.id],
+        )
+      ).rows[0].n,
+      0,
     );
   } finally {
     await db.close();

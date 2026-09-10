@@ -34,9 +34,10 @@ function errorMessage(error: unknown, fallback: string) {
     const databaseError = error as { code?: string; message?: string; details?: string };
     if (databaseError.code === "23503") return getDeleteDependencyMessage(databaseError, fallback);
     if (databaseError.code === "23505") return "A record with the same unique value already exists.";
-    if (databaseError.message?.trim()) return databaseError.message;
   }
-  return error instanceof Error ? error.message : fallback;
+  return error instanceof Error && error.message.startsWith("You do not have permission")
+    ? error.message
+    : fallback;
 }
 
 async function assertSaved(

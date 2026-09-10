@@ -1,111 +1,6 @@
-// createCountry()
-// updateCountry()
-// deleteCountry()
-//  we will build these logics here
-
-
-// import { createClient } from "@/lib/supabase/server";
-// import type {
-//   Country,
-//   CountryInsert,
-//   CountryUpdate,
-// } from "@/types/country";
-
-// /**
-//  * Create a new country.
-//  */
-// export async function createCountry(
-//   payload: CountryInsert
-// ): Promise<Country> {
-//   const supabase = await createClient();
-
-//   const { data, error } = await supabase
-//     .from("countries")
-//     .insert(payload)
-//     .select("*")
-//     .single();
-
-//   if (error) {
-//     console.error("Error creating country:", error);
-//     throw new Error(error.message || "Failed to create country");
-//   }
-
-//   return data;
-// }
-
-// /**
-//  * Update an existing country.
-//  */
-// export async function updateCountry(
-//   id: string,
-//   payload: CountryUpdate
-// ): Promise<Country> {
-//   const supabase = await createClient();
-
-//   const { data, error } = await supabase
-//     .from("countries")
-//     .update(payload)
-//     .eq("id", id)
-//     .select("*")
-//     .single();
-
-//   if (error) {
-//     console.error("Error updating country:", error);
-//     throw new Error(error.message || "Failed to update country");
-//   }
-
-//   return data;
-// }
-
-// /**
-//  * Delete a country.
-//  */
-// export async function deleteCountry(
-//   id: string
-// ): Promise<void> {
-//   const supabase = await createClient();
-
-//   const { error } = await supabase
-//     .from("countries")
-//     .delete()
-//     .eq("id", id);
-
-//   if (error) {
-//     console.error("Error deleting country:", error);
-//     throw new Error(error.message || "Failed to delete country");
-//   }
-// }
-
-// /**
-//  * Update country active/inactive status.
-//  */
-// export async function updateCountryStatus(
-//   id: string,
-//   status: Country["status"]
-// ): Promise<Country> {
-//   const supabase = await createClient();
-
-//   const { data, error } = await supabase
-//     .from("countries")
-//     .update({ status })
-//     .eq("id", id)
-//     .select("*")
-//     .single();
-
-//   if (error) {
-//     console.error("Error updating country status:", error);
-//     throw new Error(
-//       error.message || "Failed to update country status"
-//     );
-//   }
-
-//   return data;
-// }
-
-// ---------------------------------------------new code  here-----------------------------------
-
 import { createClient } from "@/lib/supabase/server";
 import { getDeleteDependencyMessage } from "@/lib/database/delete-error";
+import { resolveSelectedImage } from "@/lib/media/selection";
 import type {
   Country,
   CountryInsert,
@@ -119,15 +14,18 @@ export async function createCountry(
   payload: CountryInsert,
 ): Promise<Country> {
   const supabase = await createClient();
+  const selectedImage = await resolveSelectedImage(
+    payload.image_asset_id,
+    payload.image_url,
+  );
 
   const { data, error } = await supabase
     .from("countries")
-    .insert(payload)
+    .insert({ ...payload, image_asset_id: selectedImage.imageAssetId, image_url: selectedImage.imageUrl })
     .select("*")
     .single();
 
   if (error) {
-    console.error("Error creating country:", error);
 
     // PostgreSQL unique constraint violation
     if (error.code === "23505") {
@@ -136,7 +34,7 @@ export async function createCountry(
       );
     }
 
-    throw new Error(error.message || "Failed to create country");
+    throw new Error("Failed to create country");
   }
 
   if (!data) {
@@ -154,16 +52,23 @@ export async function updateCountry(
   payload: CountryUpdate,
 ): Promise<Country> {
   const supabase = await createClient();
+  const selectedImage =
+    "image_asset_id" in payload || "image_url" in payload
+      ? await resolveSelectedImage(payload.image_asset_id, payload.image_url)
+      : null;
 
   const { data, error } = await supabase
     .from("countries")
-    .update(payload)
+    .update(
+      selectedImage
+        ? { ...payload, image_asset_id: selectedImage.imageAssetId, image_url: selectedImage.imageUrl }
+        : payload,
+    )
     .eq("id", id)
     .select("*")
     .single();
 
   if (error) {
-    console.error("Error updating country:", error);
 
     // PostgreSQL unique constraint violation
     if (error.code === "23505") {
@@ -172,7 +77,7 @@ export async function updateCountry(
       );
     }
 
-    throw new Error(error.message || "Failed to update country");
+    throw new Error("Failed to update country");
   }
 
   if (!data) {
@@ -196,7 +101,6 @@ export async function deleteCountry(
     .eq("country_id", id);
 
   if (dependencyError) {
-    console.error("Error checking country dependencies:", dependencyError);
     throw new Error("Could not verify whether this country is safe to delete.");
   }
 
@@ -212,7 +116,6 @@ export async function deleteCountry(
     .eq("id", id);
 
   if (error) {
-    console.error("Error deleting country:", error);
     throw new Error(
       getDeleteDependencyMessage(error, "Failed to delete country."),
     );
@@ -236,11 +139,7 @@ export async function updateCountryStatus(
     .single();
 
   if (error) {
-    console.error("Error updating country status:", error);
-
-    throw new Error(
-      error.message || "Failed to update country status",
-    );
+    throw new Error("Failed to update country status");
   }
 
   if (!data) {

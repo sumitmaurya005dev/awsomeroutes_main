@@ -322,11 +322,6 @@ export function EditRegionDialog({
           ? JSON.parse(responseText)
           : {};
       } catch {
-        console.error(
-          "Region PATCH raw response:",
-          responseText
-        );
-
         throw new Error(
           `Region update API returned an invalid response (status ${response.status}).`
         );
@@ -351,11 +346,6 @@ export function EditRegionDialog({
       onOpenChange(false);
       router.refresh();
     } catch (submitError) {
-      console.error(
-        "Update region error:",
-        submitError
-      );
-
       setError(
         submitError instanceof Error
           ? submitError.message

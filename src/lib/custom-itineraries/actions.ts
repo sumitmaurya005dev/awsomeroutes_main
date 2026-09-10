@@ -22,12 +22,17 @@ function problem(e: unknown) {
       .map((x) => x.message)
       .slice(0, 4)
       .join(" ");
-  if (e instanceof Error) return e.message;
   const db = e as { code?: string; message?: string };
   if (db?.code === "23503")
     return "A selected catalog item was removed or is still linked. Reload the itinerary.";
-  if (db?.code === "40001" || db?.code === "42501")
-    return db.message ?? "This operation is not allowed.";
+  if (db?.code === "40001") return "This quotation changed. Reload and try again.";
+  if (db?.code === "42501") return "This operation is not allowed.";
+  if (
+    e instanceof Error &&
+    (e.message.startsWith("You do not have permission") ||
+      e.message.startsWith("This quotation changed"))
+  )
+    return e.message;
   return "The itinerary could not be saved. Check your connection and try again.";
 }
 function refresh(id: string) {
@@ -91,10 +96,6 @@ export async function saveCustomItinerary(
       data: { id: value.id, version: value.version + 1 },
     };
   } catch (e) {
-    console.error(
-      "Custom itinerary save failed",
-      e instanceof Error ? e.message : (e as { code?: string })?.code,
-    );
     return { success: false, error: problem(e) };
   }
 }
@@ -179,6 +180,28 @@ export async function deleteCustomItinerary(
     const { user } = await requireItineraryAccess("delete");
     const db = await itineraryDatabase("delete");
     const { error } = await db.rpc("delete_custom_itinerary", {
+      p_actor: user.id,
+      p_id: id,
+      p_version: version,
+    });
+    if (error) throw error;
+    refresh(id);
+    return { success: true, data: null };
+  } catch (e) {
+    return { success: false, error: problem(e) };
+  }
+}
+
+export async function anonymizeCustomItineraryCustomer(
+  id: string,
+  version: number,
+): Promise<Result<null>> {
+  try {
+    z.uuid().parse(id);
+    z.number().int().positive().parse(version);
+    const { user } = await requireItineraryAccess("delete");
+    const db = await itineraryDatabase("delete");
+    const { error } = await db.rpc("anonymize_custom_itinerary_customer", {
       p_actor: user.id,
       p_id: id,
       p_version: version,

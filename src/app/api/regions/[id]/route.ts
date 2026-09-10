@@ -2,26 +2,28 @@ import {
   NextRequest,
   NextResponse,
 } from "next/server";
+import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 import { hasPermission } from "@/lib/auth";
+import { logServerError } from "@/lib/security/log-server-error";
+import { getCorrelationId } from "@/lib/security/request-security";
+const updateRegionSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  slug: z.string().trim().min(1).max(140).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  description: z.string().trim().max(10_000).nullable().optional(),
+  status: z.enum(["active", "inactive"]),
+  image_url: z.url().max(2_048).nullable().optional(),
+  image_asset_id: z.uuid().nullable().optional(),
+}).strict();
 
-type UpdateRegionBody = {
-  name?: unknown;
-  slug?: unknown;
-  description?: unknown;
-  status?: unknown;
-  image_url?: unknown;
-  image_asset_id?: unknown;
-};
-
-function isOptionalString(
-  value: unknown
-): value is string | null {
-  return (
-    typeof value === "string" ||
-    value === null
-  );
+function isTrustedImageUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname === "ik.imagekit.io";
+  } catch {
+    return false;
+  }
 }
 
 export async function PATCH(
@@ -32,6 +34,7 @@ export async function PATCH(
     params: Promise<{ id: string }>;
   }
 ) {
+  const correlationId = getCorrelationId(request);
   try {
     if (!(await hasPermission("regions.update"))) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
@@ -39,10 +42,10 @@ export async function PATCH(
 
     const { id } = await params;
 
-    if (!id) {
+    if (!z.uuid().safeParse(id).success) {
       return NextResponse.json(
         {
-          error: "Region ID is required.",
+          error: "A valid region ID is required.",
         },
         {
           status: 400,
@@ -50,75 +53,16 @@ export async function PATCH(
       );
     }
 
-    const body =
-      (await request.json()) as UpdateRegionBody;
-
-    const name =
-      typeof body.name === "string"
-        ? body.name.trim()
-        : "";
-
-    const slug =
-      typeof body.slug === "string"
-        ? body.slug.trim()
-        : "";
-
-    const status =
-      body.status === "active" ||
-      body.status === "inactive"
-        ? body.status
-        : null;
-
-    const description = isOptionalString(
-      body.description
-    )
-      ? body.description?.trim() || null
-      : null;
-
-  const imageUrl = isOptionalString(
-    body.image_url
-  )
-      ? body.image_url?.trim() || null
-      : null;
-
-  const imageAssetId = isOptionalString(
-    body.image_asset_id
-  )
-    ? body.image_asset_id?.trim() || null
-    : null;
-
-    if (!name) {
-      return NextResponse.json(
-        {
-          error: "Region name is required.",
-        },
-        {
-          status: 400,
-        }
-      );
+    const parsed = updateRegionSchema.safeParse(await request.json());
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid region data." }, { status: 400 });
     }
-
-    if (!slug) {
-      return NextResponse.json(
-        {
-          error: "Region slug is required.",
-        },
-        {
-          status: 400,
-        }
-      );
-    }
-
-    if (!status) {
-      return NextResponse.json(
-        {
-          error:
-            "Status must be active or inactive.",
-        },
-        {
-          status: 400,
-        }
-      );
+    const { name, slug, status } = parsed.data;
+    const description = parsed.data.description || null;
+    let imageUrl = parsed.data.image_url || null;
+    const imageAssetId = parsed.data.image_asset_id || null;
+    if (imageUrl && !isTrustedImageUrl(imageUrl)) {
+      return NextResponse.json({ error: "Select an image from the Media Library." }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -145,16 +89,13 @@ export async function PATCH(
         error: mediaAssetError,
       } = await supabase
         .from("media_assets")
-        .select("id")
+        .select("id,original_url")
         .eq("id", imageAssetId)
         .eq("status", "active")
         .maybeSingle();
 
       if (mediaAssetError) {
-        console.error(
-          "Media asset validation error:",
-          mediaAssetError
-        );
+        logServerError("Media asset validation failed.", mediaAssetError, correlationId);
 
         return NextResponse.json(
           {
@@ -178,6 +119,9 @@ export async function PATCH(
           }
         );
       }
+      // Bind the URL to the selected row instead of trusting a second client-
+      // supplied identifier that could reference unrelated external content.
+      imageUrl = mediaAsset.original_url;
     }
 
     const { data, error } = await supabase
@@ -191,20 +135,15 @@ export async function PATCH(
         image_asset_id: imageAssetId,
       })
       .eq("id", id)
-      .select()
+      .select("id")
       .single();
 
     if (error) {
-      console.error(
-        "Supabase region update error:",
-        error
-      );
+      logServerError("Region update failed.", error, correlationId);
 
       return NextResponse.json(
         {
-          error:
-            error.message ||
-            "Failed to update region.",
+          error: "Failed to update region.",
         },
         {
           status: 500,
@@ -222,17 +161,11 @@ export async function PATCH(
       }
     );
   } catch (error) {
-    console.error(
-      "Region PATCH route error:",
-      error
-    );
+    logServerError("Region PATCH route failed.", error, correlationId);
 
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Internal server error.",
+        error: "Internal server error.",
       },
       {
         status: 500,

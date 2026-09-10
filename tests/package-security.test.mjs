@@ -43,6 +43,12 @@ test("package activity save verifies package ownership and active offering on th
  assert.match(mutations,/This activity does not belong to the selected package/);
 });
 
+test("generic package child updates and deletes are bound to the selected package",()=>{
+ assert.match(mutations,/update\(options\.values as never\)[\s\S]*eq\("package_id",options\.packageId\)/);
+ assert.match(mutations,/select\("id"\)\.eq\("id",id\)\.eq\("package_id",packageId\)/);
+ assert.match(mutations,/itinerary_day:package_itinerary_days\(package_id\)/);
+});
+
 test("package content defaults are versioned, protected and copied as snapshots",()=>{
  for(const table of ["package_content_templates","package_content_template_sections","package_content_template_items"]){
   assert.match(contentDefaultsMigration,new RegExp(`create table public\\.${table}`));
